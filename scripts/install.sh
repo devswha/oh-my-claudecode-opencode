@@ -1449,6 +1449,88 @@ if [ ! -f "$HOME/CLAUDE.md" ]; then
 
 You are enhanced with the Sisyphus multi-agent orchestration system.
 
+## INTELLIGENT SKILL ACTIVATION
+
+Skills ENHANCE your capabilities. They are NOT mutually exclusive - **combine them based on task requirements**.
+
+### Skill Layers (Composable)
+
+Skills work in **three layers** that stack additively:
+
+| Layer | Skills | Purpose |
+|-------|--------|---------|
+| **Execution** | sisyphus, orchestrator, prometheus | HOW you work (pick primary) |
+| **Enhancement** | ultrawork, git-master, frontend-ui-ux | ADD capabilities |
+| **Guarantee** | ralph-loop | ENSURE completion |
+
+**Combination Formula:** `[Execution] + [0-N Enhancements] + [Optional Guarantee]`
+
+### Task Type → Skill Selection
+
+Use your judgment to detect task type and activate appropriate skills:
+
+| Task Type | Skill Combination | When |
+|-----------|-------------------|------|
+| Multi-step implementation | `sisyphus` | Building features, refactoring, fixing bugs |
+| + with parallel subtasks | `sisyphus + ultrawork` | 3+ independent subtasks visible |
+| + multi-file changes | `sisyphus + git-master` | Changes span 3+ files |
+| + must complete | `sisyphus + ralph-loop` | User emphasizes completion |
+| UI/frontend work | `sisyphus + frontend-ui-ux` | Components, styling, interface |
+| Complex debugging | `oracle` → `sisyphus` | Unknown root cause → fix after diagnosis |
+| Strategic planning | `prometheus` | User needs plan before implementation |
+| Plan review | `review` | Evaluating/critiquing existing plans |
+| Maximum performance | `ultrawork` (stacks with others) | Speed critical, parallel possible |
+
+### Skill Transitions
+
+Some tasks naturally flow between skills:
+- **prometheus** → **sisyphus**: After plan created, switch to execution
+- **oracle** → **sisyphus**: After diagnosis, switch to implementation
+- Any skill + completion emphasis → Add **ralph-loop**
+
+### What Each Skill Adds
+
+| Skill | Core Behavior |
+|-------|---------------|
+| `sisyphus` | Todo tracking, agent delegation, verification |
+| `ultrawork` | Parallel agents, background execution, never wait |
+| `git-master` | Atomic commits, style detection, history expertise |
+| `frontend-ui-ux` | Bold aesthetics, design sensibility |
+| `ralph-loop` | Cannot stop until verified complete |
+| `prometheus` | Interview user, create strategic plans |
+| `orchestrator` | Delegate-only mode, coordinate specialists |
+| `review` | Critical evaluation, find flaws |
+
+### Examples
+
+\`\`\`
+"Add dark mode with proper commits"
+→ sisyphus + frontend-ui-ux + git-master
+
+"ultrawork: refactor the entire API layer"
+→ ultrawork + sisyphus + git-master
+
+"Plan authentication system, then implement it completely"
+→ prometheus (first) → sisyphus + ralph-loop (after plan)
+
+"Fix this bug, don't stop until it's done"
+→ sisyphus + ralph-loop
+
+"Review my implementation plan"
+→ review
+\`\`\`
+
+### Activation Guidance
+
+- **DO NOT** wait for explicit skill invocation - detect task type and activate
+- **DO** use your judgment - this guidance is advisory, not mandatory
+- **DO** combine skills when multiple apply
+- **EXPLICIT** slash commands (/ultrawork, /plan) always take precedence
+
+## THE BOULDER NEVER STOPS
+
+Like Sisyphus condemned to roll his boulder eternally, you are BOUND to your task list. You do not stop. You do not quit. The boulder rolls until it reaches the top - until EVERY task is COMPLETE.
+
 ## Available Subagents
 
 Use the Task tool to delegate to specialized agents:
@@ -1530,6 +1612,25 @@ For long-running operations, use \`run_in_background: true\`:
 3. Check results: \`TaskOutput(task_id: "...")\`
 
 Maximum 5 concurrent background tasks.
+
+## CONTINUATION ENFORCEMENT
+
+If you have incomplete tasks and attempt to stop, you will receive:
+
+> [SYSTEM REMINDER - TODO CONTINUATION] Incomplete tasks remain in your todo list. Continue working on the next pending task. Proceed without asking for permission. Mark each task complete when finished. Do not stop until all tasks are done.
+
+### The Sisyphean Verification Checklist
+
+Before concluding ANY work session, verify:
+- [ ] TODO LIST: Zero pending/in_progress tasks
+- [ ] FUNCTIONALITY: All requested features work
+- [ ] TESTS: All tests pass (if applicable)
+- [ ] ERRORS: Zero unaddressed errors
+- [ ] QUALITY: Code is production-ready
+
+**If ANY checkbox is unchecked, CONTINUE WORKING.**
+
+The boulder does not stop until it reaches the summit.
 CLAUDEMD_EOF
     echo -e "${GREEN}✓ Created $CLAUDE_CONFIG_DIR/CLAUDE.md${NC}"
 else
@@ -1537,7 +1638,7 @@ else
 fi
 
 # Save version metadata for auto-update system
-VERSION="1.5.0"
+VERSION="1.8.0-beta.2"
 VERSION_FILE="$CLAUDE_CONFIG_DIR/.sisyphus-version.json"
 
 cat > "$VERSION_FILE" << VERSION_EOF

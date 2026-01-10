@@ -3,6 +3,7 @@
 ![oh-my-claude-sisyphus](https://raw.githubusercontent.com/Yeachan-Heo/oh-my-claude-sisyphus-website/main/social-preview.png)
 
 [![npm version](https://badge.fury.io/js/oh-my-claude-sisyphus.svg)](https://www.npmjs.com/package/oh-my-claude-sisyphus)
+[![Beta](https://img.shields.io/badge/beta-1.8.0--beta.2-orange)](https://www.npmjs.com/package/oh-my-claude-sisyphus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Agents](https://img.shields.io/badge/Agents-11-ff0040)](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus)
 [![Days Since Ban](https://img.shields.io/badge/Days%20Since%20Ban-0-00ffff)](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus)
@@ -12,7 +13,7 @@
 
 *Like Sisyphus, these agents persist until every task is complete.*
 
-[Install](#quick-install) • [Usage](#usage) • [Agents](#the-eleven-agents) • [Website](https://yeachan-heo.github.io/oh-my-claude-sisyphus-website)
+[Install](#quick-install) • [Usage](#usage) • [Agents](#the-eleven-agents) • [Architecture](docs/ARCHITECTURE.md) • [Website](https://yeachan-heo.github.io/oh-my-claude-sisyphus-website)
 
 </div>
 
@@ -229,6 +230,61 @@ Six builtin skills provide specialized capabilities:
 | **git-master** | Git expert for atomic commits and history |
 
 Skills are automatically activated via slash commands or magic keywords.
+
+---
+
+## Intelligent Skill Activation (Beta)
+
+> **New in v1.8.0-beta**: Skills are no longer mutually exclusive. Claude automatically combines skills based on task requirements.
+
+### Skill Layers
+
+Skills work in **three composable layers**:
+
+| Layer | Skills | Purpose |
+|-------|--------|---------|
+| **Execution** | sisyphus, orchestrator, prometheus | HOW you work (pick primary) |
+| **Enhancement** | ultrawork, git-master, frontend-ui-ux | ADD capabilities (stack multiple) |
+| **Guarantee** | ralph-loop | ENSURE completion |
+
+**Combination Formula:** `[Execution] + [0-N Enhancements] + [Optional Guarantee]`
+
+### Task Type → Skill Selection
+
+Claude uses judgment to detect task type and activate appropriate skill combinations:
+
+| Task Type | Skill Combination | When |
+|-----------|-------------------|------|
+| Multi-step implementation | `sisyphus` | Building features, refactoring |
+| + parallel subtasks | `sisyphus + ultrawork` | 3+ independent subtasks |
+| + multi-file changes | `sisyphus + git-master` | Changes span 3+ files |
+| + must complete | `sisyphus + ralph-loop` | User emphasizes completion |
+| UI/frontend work | `sisyphus + frontend-ui-ux` | Components, styling |
+| Complex debugging | `oracle` → `sisyphus` | Root cause → fix |
+| Strategic planning | `prometheus` | Need plan first |
+| Maximum performance | `ultrawork` (stacks) | Speed critical |
+
+### Examples
+
+```
+"Add dark mode with proper commits"
+→ sisyphus + frontend-ui-ux + git-master
+
+"ultrawork: refactor the entire API layer"
+→ ultrawork + sisyphus + git-master
+
+"Plan auth system, then implement it completely"
+→ prometheus (first) → sisyphus + ralph-loop (after plan)
+
+"Fix this bug, don't stop until it's done"
+→ sisyphus + ralph-loop
+```
+
+### Install Beta
+
+```bash
+npm install -g oh-my-claude-sisyphus@beta
+```
 
 ---
 

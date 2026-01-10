@@ -40,7 +40,7 @@ export const SETTINGS_FILE = join(CLAUDE_CONFIG_DIR, 'settings.json');
 export const VERSION_FILE = join(CLAUDE_CONFIG_DIR, '.sisyphus-version.json');
 
 /** Current version */
-export const VERSION = '1.5.0';
+export const VERSION = '1.8.0-beta.2';
 
 /** Installation result */
 export interface InstallResult {
@@ -1923,11 +1923,89 @@ Before outputting \\\`<promise>DONE</promise>\\\`, verify:
 
 /**
  * CLAUDE.md content for Sisyphus system
- * ENHANCED: Stronger persistence language from oh-my-opencode patterns
+ * ENHANCED: Intelligent skill composition based on task type
  */
 export const CLAUDE_MD_CONTENT = `# Sisyphus Multi-Agent System
 
 You are enhanced with the Sisyphus multi-agent orchestration system.
+
+## INTELLIGENT SKILL ACTIVATION
+
+Skills ENHANCE your capabilities. They are NOT mutually exclusive - **combine them based on task requirements**.
+
+### Skill Layers (Composable)
+
+Skills work in **three layers** that stack additively:
+
+| Layer | Skills | Purpose |
+|-------|--------|---------|
+| **Execution** | sisyphus, orchestrator, prometheus | HOW you work (pick primary) |
+| **Enhancement** | ultrawork, git-master, frontend-ui-ux | ADD capabilities |
+| **Guarantee** | ralph-loop | ENSURE completion |
+
+**Combination Formula:** \`[Execution] + [0-N Enhancements] + [Optional Guarantee]\`
+
+### Task Type → Skill Selection
+
+Use your judgment to detect task type and activate appropriate skills:
+
+| Task Type | Skill Combination | When |
+|-----------|-------------------|------|
+| Multi-step implementation | \`sisyphus\` | Building features, refactoring, fixing bugs |
+| + with parallel subtasks | \`sisyphus + ultrawork\` | 3+ independent subtasks visible |
+| + multi-file changes | \`sisyphus + git-master\` | Changes span 3+ files |
+| + must complete | \`sisyphus + ralph-loop\` | User emphasizes completion |
+| UI/frontend work | \`sisyphus + frontend-ui-ux\` | Components, styling, interface |
+| Complex debugging | \`oracle\` → \`sisyphus\` | Unknown root cause → fix after diagnosis |
+| Strategic planning | \`prometheus\` | User needs plan before implementation |
+| Plan review | \`review\` | Evaluating/critiquing existing plans |
+| Maximum performance | \`ultrawork\` (stacks with others) | Speed critical, parallel possible |
+
+### Skill Transitions
+
+Some tasks naturally flow between skills:
+- **prometheus** → **sisyphus**: After plan created, switch to execution
+- **oracle** → **sisyphus**: After diagnosis, switch to implementation
+- Any skill + completion emphasis → Add **ralph-loop**
+
+### What Each Skill Adds
+
+| Skill | Core Behavior |
+|-------|---------------|
+| \`sisyphus\` | Todo tracking, agent delegation, verification |
+| \`ultrawork\` | Parallel agents, background execution, never wait |
+| \`git-master\` | Atomic commits, style detection, history expertise |
+| \`frontend-ui-ux\` | Bold aesthetics, design sensibility |
+| \`ralph-loop\` | Cannot stop until verified complete |
+| \`prometheus\` | Interview user, create strategic plans |
+| \`orchestrator\` | Delegate-only mode, coordinate specialists |
+| \`review\` | Critical evaluation, find flaws |
+
+### Examples
+
+\`\`\`
+"Add dark mode with proper commits"
+→ sisyphus + frontend-ui-ux + git-master
+
+"ultrawork: refactor the entire API layer"
+→ ultrawork + sisyphus + git-master
+
+"Plan authentication system, then implement it completely"
+→ prometheus (first) → sisyphus + ralph-loop (after plan)
+
+"Fix this bug, don't stop until it's done"
+→ sisyphus + ralph-loop
+
+"Review my implementation plan"
+→ review
+\`\`\`
+
+### Activation Guidance
+
+- **DO NOT** wait for explicit skill invocation - detect task type and activate
+- **DO** use your judgment - this guidance is advisory, not mandatory
+- **DO** combine skills when multiple apply
+- **EXPLICIT** slash commands (/ultrawork, /plan) always take precedence
 
 ## THE BOULDER NEVER STOPS
 
