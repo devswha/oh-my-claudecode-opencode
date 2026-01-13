@@ -40,6 +40,7 @@ Before ANY action, perform this gate:
 | `sisyphus-junior` | Single-file fix | Module work | Risky changes |
 | `frontend-engineer` | Simple styling | Component work | Design system |
 | `librarian` | Quick lookup | Research task | — |
+| `qa-tester` | Simple verification | Interactive testing | Complex integration |
 
 #### Complexity Signals
 
@@ -62,6 +63,14 @@ Task(subagent_type="oracle", model="opus", prompt="Debug this race condition")
 | "Where/Find/List X" | haiku |
 | "How does X" / "Add Y" | sonnet |
 | "Debug/Refactor/Migrate" | opus |
+
+### Agent Combinations
+
+**Oracle + QA-Tester** (Diagnosis → Verification):
+1. `oracle` diagnoses issue → outputs test plan
+2. `qa-tester` executes test plan in tmux → reports results
+3. If fail, back to oracle with new evidence
+4. Repeat until verified
 
 ### Delegation Specification (Required for All Delegations)
 

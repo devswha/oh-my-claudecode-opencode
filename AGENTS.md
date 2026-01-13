@@ -36,7 +36,7 @@ The orchestrator (always Opus) analyzes task complexity BEFORE delegation:
 ```
 oh-my-claude-sisyphus/
 ├── src/
-│   ├── agents/              # 11 agent definitions
+│   ├── agents/              # 12 agent definitions
 │   │   ├── definitions.ts   # Agent registry & configs
 │   │   ├── types.ts         # Agent type definitions
 │   │   ├── utils.ts         # Shared utilities
@@ -50,7 +50,8 @@ oh-my-claude-sisyphus/
 │   │   ├── momus.ts         # Critical plan review
 │   │   ├── metis.ts         # Pre-planning analysis
 │   │   ├── orchestrator-sisyphus.ts  # Todo coordination
-│   │   └── prometheus.ts    # Strategic planning
+│   │   ├── prometheus.ts    # Strategic planning
+│   │   └── qa-tester.ts     # CLI/service testing with tmux
 │   ├── hooks/               # 8 hook modules
 │   │   ├── keyword-detector/    # Magic keyword detection
 │   │   ├── ralph-loop/          # Self-referential work loops
@@ -115,6 +116,7 @@ oh-my-claude-sisyphus/
 | **metis** | Opus | Pre-planning | Hidden requirements |
 | **orchestrator-sisyphus** | Sonnet | Todo coordination | Task delegation |
 | **prometheus** | Opus | Strategic planning | Interview-style planning |
+| **qa-tester** | Sonnet | CLI/service testing | Interactive tmux testing |
 
 ## HOOKS
 
