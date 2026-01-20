@@ -1,8 +1,33 @@
-# omo-omcs
+# oh-my-ssalsyphus
 
-**Oh My OpenCode Sisyphus** - Multi-agent orchestration system for [OpenCode](https://github.com/opencode-ai/opencode).
+> 🔄 **OpenCode port of [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus)**
+
+**Oh My Ssal Sisyphus** - Multi-agent orchestration plugin that brings [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus) features to [OpenCode](https://github.com/opencode-ai/opencode).
 
 Like Sisyphus condemned to roll his boulder eternally, this plugin ensures your AI assistant **never stops until the task is complete**.
+
+---
+
+## 🎯 What is this?
+
+This project **ports the powerful features** of [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus) (a Claude Code plugin) to the **OpenCode platform**.
+
+| Original (Claude Code) | This Port (OpenCode) |
+|------------------------|----------------------|
+| [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus) | **oh-my-ssalsyphus** |
+| Shell hooks + Node.js bridge | Native TypeScript plugin API |
+| Stop hook (proactive blocking) | session.idle event (reactive) |
+
+### Key Features Ported
+- ✅ Ultrawork Mode (maximum intensity parallel execution)
+- ✅ Ralph Loop (self-referential completion loop)
+- ✅ TODO Continuation Enforcer
+- ✅ PRD-based task tracking
+- ✅ Notepad memory system (`<remember>` tags)
+- ✅ Background agent orchestration
+- ✅ Session state persistence
+
+---
 
 ## Features
 
@@ -211,8 +236,8 @@ When triggered:
 
 ```bash
 # Clone the repo
-git clone https://github.com/calvin/omo-omcs.git
-cd omo-omcs
+git clone https://github.com/devswha/oh-my-ssalsyphus.git
+cd oh-my-ssalsyphus
 
 # Install dependencies
 bun install
@@ -239,7 +264,11 @@ Named after Sisyphus from Greek mythology - condemned to roll a boulder up a hil
 
 ## Credits
 
-Inspired by [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode) and [oh-my-claude-sisyphus](https://github.com/code-yeongyu/oh-my-claude-sisyphus).
+This project is an **OpenCode port** of [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus) by [@Yeachan-Heo](https://github.com/Yeachan-Heo).
+
+Special thanks to:
+- [oh-my-claude-sisyphus](https://github.com/Yeachan-Heo/oh-my-claude-sisyphus) - The original Claude Code plugin this project ports
+- [OpenCode](https://github.com/opencode-ai/opencode) - The target platform
 
 ## License
 
