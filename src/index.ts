@@ -4,6 +4,7 @@ import { createKeywordDetectorHook } from "./hooks/keyword-detector";
 import { createRalphLoopHook } from "./hooks/ralph-loop";
 import { createSessionRecoveryHook } from "./hooks/session-recovery";
 import { createAgentUsageReminderHook } from "./hooks/agent-usage-reminder";
+import { createSystemPromptInjector } from "./hooks/system-prompt-injector";
 import { createBackgroundManager } from "./tools/background-manager";
 import { createBackgroundTools } from "./tools/background-tools";
 import { createCallOmoAgent } from "./tools/call-omo-agent";
@@ -20,16 +21,39 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
 
   const backgroundManager = createBackgroundManager(ctx, config.background_task);
 
+  const systemPromptInjector = isHookEnabled("system-prompt-injector")
+    ? createSystemPromptInjector(ctx)
+    : null;
+
   const todoContinuationEnforcer = isHookEnabled("todo-continuation-enforcer")
     ? createTodoContinuationEnforcer(ctx, { backgroundManager })
     : null;
 
-  const keywordDetector = isHookEnabled("keyword-detector")
-    ? createKeywordDetectorHook(ctx)
+  const ralphLoop = isHookEnabled("ralph-loop")
+    ? createRalphLoopHook(ctx, {
+        config: config.ralph_loop,
+        onModeChange: (sessionID, mode, task) => {
+          systemPromptInjector?.setMode(sessionID, mode, task);
+          if (mode === "ralph-loop" || mode === "ultrawork-ralph") {
+            ralphLoop?.startLoop(sessionID, task ?? "Complete the task", {
+              mode: mode as "ralph-loop" | "ultrawork-ralph",
+            });
+          }
+        },
+      })
     : null;
 
-  const ralphLoop = isHookEnabled("ralph-loop")
-    ? createRalphLoopHook(ctx, { config: config.ralph_loop })
+  const keywordDetector = isHookEnabled("keyword-detector")
+    ? createKeywordDetectorHook(ctx, {
+        onModeChange: (sessionID, mode, task) => {
+          systemPromptInjector?.setMode(sessionID, mode, task);
+          if (mode === "ralph-loop" || mode === "ultrawork-ralph") {
+            ralphLoop?.startLoop(sessionID, task ?? "Complete the task", {
+              mode: mode as "ralph-loop" | "ultrawork-ralph",
+            });
+          }
+        },
+      })
     : null;
 
   const sessionRecovery = isHookEnabled("session-recovery")
@@ -59,23 +83,10 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
 
     "chat.message": async (input, output) => {
       await keywordDetector?.["chat.message"]?.(input, output);
+    },
 
-      if (ralphLoop) {
-        const parts = (output as { parts?: Array<{ type: string; text?: string }> }).parts;
-        const promptText = parts
-          ?.filter((p) => p.type === "text" && p.text)
-          .map((p) => p.text)
-          .join("\n")
-          .trim() || "";
-
-        if (promptText.includes("/ralph-loop")) {
-          const taskMatch = promptText.match(/\/ralph-loop\s+["']?(.+?)["']?$/);
-          const prompt = taskMatch?.[1] || "Complete the task";
-          ralphLoop.startLoop(input.sessionID, prompt);
-        } else if (promptText.includes("/cancel-ralph")) {
-          ralphLoop.cancelLoop(input.sessionID);
-        }
-      }
+    "experimental.chat.system.transform": async (input, output) => {
+      await systemPromptInjector?.["experimental.chat.system.transform"]?.(input, output);
     },
 
     event: async (input) => {
@@ -98,6 +109,9 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
         if (sessionInfo?.id === mainSessionID) {
           mainSessionID = undefined;
           setMainSessionID(undefined);
+        }
+        if (sessionInfo?.id) {
+          systemPromptInjector?.clearMode(sessionInfo.id);
         }
       }
 
