@@ -1,12 +1,12 @@
 {
-  "name": "omo-omcs",
+  "name": "oh-my-ssalsyphus",
   "version": "0.1.0",
-  "description": "Oh My OpenCode Sisyphus - Multi-agent orchestration system for OpenCode",
+  "description": "OpenCode port of oh-my-claude-sisyphus - Multi-agent orchestration plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
-    "omo-omcs": "./dist/cli/index.js"
+    "oh-my-ssalsyphus": "./dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -44,12 +44,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/calvin/omo-omcs.git"
+    "url": "git+https://github.com/devswha/oh-my-ssalsyphus.git"
   },
   "bugs": {
-    "url": "https://github.com/calvin/omo-omcs/issues"
+    "url": "https://github.com/devswha/oh-my-ssalsyphus/issues"
   },
-  "homepage": "https://github.com/calvin/omo-omcs#readme",
+  "homepage": "https://github.com/devswha/oh-my-ssalsyphus#readme",
   "dependencies": {
     "@opencode-ai/plugin": "^1.1.1",
     "@opencode-ai/sdk": "^1.1.1",
