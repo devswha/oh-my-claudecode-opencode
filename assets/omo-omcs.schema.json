@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "omo-omcs Configuration",
+  "description": "Configuration schema for Oh My OpenCode Sisyphus plugin",
+  "type": "object",
+  "properties": {
+    "disabled_hooks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "todo-continuation-enforcer",
+          "keyword-detector",
+          "ralph-loop",
+          "session-recovery",
+          "agent-usage-reminder"
+        ]
+      },
+      "description": "List of hooks to disable",
+      "default": []
+    },
+    "background_task": {
+      "type": "object",
+      "description": "Background task configuration",
+      "properties": {
+        "max_concurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Maximum number of concurrent background tasks"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000,
+          "default": 300000,
+          "description": "Default timeout for background tasks in milliseconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ralph_loop": {
+      "type": "object",
+      "description": "Ralph Loop configuration",
+      "properties": {
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50,
+          "description": "Maximum iterations before forcing stop"
+        },
+        "idle_timeout_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 300000,
+          "default": 30000,
+          "description": "Idle timeout before injecting continuation prompt"
+        },
+        "prd_path": {
+          "type": "string",
+          "default": ".sisyphus/prd.json",
+          "description": "Path to PRD file for structured task tracking"
+        }
+      },
+      "additionalProperties": false
+    },
+    "todo_continuation": {
+      "type": "object",
+      "description": "TODO continuation enforcer configuration",
+      "properties": {
+        "idle_threshold_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 120000,
+          "default": 15000,
+          "description": "Time before checking for incomplete TODOs"
+        },
+        "reminder_interval_ms": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 300000,
+          "default": 60000,
+          "description": "Interval between continuation reminders"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ultrawork": {
+      "type": "object",
+      "description": "Ultrawork mode configuration",
+      "properties": {
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["ultrawork", "ulw", "uw"],
+          "description": "Keywords that trigger ultrawork mode"
+        },
+        "auto_parallel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically parallelize independent tasks"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agents": {
+      "type": "object",
+      "description": "Agent-specific configurations",
+      "properties": {
+        "oracle": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": ["haiku", "sonnet", "opus"],
+              "default": "opus"
+            }
+          }
+        },
+        "librarian": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": ["haiku", "sonnet", "opus"],
+              "default": "sonnet"
+            }
+          }
+        },
+        "explore": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "enum": ["haiku", "sonnet", "opus"],
+              "default": "haiku"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,66 @@
+{
+  "name": "omo-omcs",
+  "version": "0.1.0",
+  "description": "Oh My OpenCode Sisyphus - Multi-agent orchestration system for OpenCode",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "omo-omcs": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "assets"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./assets/omo-omcs.schema.json"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
+    "build:watch": "bun build src/index.ts --outdir dist --target bun --format esm --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "sisyphus",
+    "multi-agent",
+    "orchestration",
+    "ai",
+    "llm",
+    "oracle",
+    "librarian",
+    "ultrawork"
+  ],
+  "author": "calvin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/calvin/omo-omcs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/calvin/omo-omcs/issues"
+  },
+  "homepage": "https://github.com/calvin/omo-omcs#readme",
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.1.1",
+    "@opencode-ai/sdk": "^1.1.1",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "bun-types": "latest",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  }
+}
