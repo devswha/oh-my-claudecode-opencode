@@ -5,8 +5,8 @@
     "": {
       "name": "omo-omcs",
       "dependencies": {
-        "@opencode-ai/plugin": "^1.1.1",
-        "@opencode-ai/sdk": "^1.1.1",
+        "@opencode-ai/plugin": "^1.1.26",
+        "@opencode-ai/sdk": "^1.1.26",
         "zod": "^4.1.8",
       },
       "devDependencies": {
@@ -15,7 +15,7 @@
         "typescript": "^5.7.3",
       },
       "peerDependencies": {
-        "@opencode-ai/plugin": ">=1.0.0",
+        "@opencode-ai/plugin": "^1.1.26",
       },
     },
   },

@@ -1,13 +1,10 @@
 {
   "name": "oh-my-ssalsyphus",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "description": "OpenCode port of oh-my-claude-sisyphus - Multi-agent orchestration plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "bin": {
-    "oh-my-ssalsyphus": "./dist/cli/index.js"
-  },
   "files": [
     "dist",
     "assets"
@@ -51,8 +48,8 @@
   },
   "homepage": "https://github.com/devswha/oh-my-ssalsyphus#readme",
   "dependencies": {
-    "@opencode-ai/plugin": "^1.1.1",
-    "@opencode-ai/sdk": "^1.1.1",
+    "@opencode-ai/plugin": "^1.1.26",
+    "@opencode-ai/sdk": "^1.1.26",
     "zod": "^4.1.8"
   },
   "devDependencies": {
