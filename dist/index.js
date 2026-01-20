@@ -26406,7 +26406,7 @@ var SLASH_COMMANDS = {
 Execute this task at MAXIMUM INTENSITY:
 
 <user-task>
-{{input}}
+$ARGUMENTS
 </user-task>
 
 ## ULTRAWORK OVERRIDES (ACTIVE)
@@ -26428,7 +26428,7 @@ Begin working NOW. PARALLEL EVERYTHING.`,
 Execute this task with COMPLETION GUARANTEE:
 
 <user-task>
-{{input}}
+$ARGUMENTS
 </user-task>
 
 ## RALPH LOOP ENFORCEMENT
@@ -26452,7 +26452,7 @@ Begin working NOW. The loop will not release you until you earn your \`<promise>
 Execute this task at MAXIMUM INTENSITY with COMPLETION GUARANTEE:
 
 <user-task>
-{{input}}
+$ARGUMENTS
 </user-task>
 
 ## THE ULTIMATE MODE
@@ -26471,7 +26471,7 @@ Begin working NOW. PARALLEL EVERYTHING. The loop will not release you until you 
     template: `Perform a thorough search across the codebase for:
 
 <query>
-{{input}}
+$ARGUMENTS
 </query>
 
 Use multiple search strategies:
@@ -26487,7 +26487,7 @@ Return comprehensive results with file paths and relevant code snippets.`,
     template: `Perform deep analysis and investigation of:
 
 <target>
-{{input}}
+$ARGUMENTS
 </target>
 
 Analyze systematically:
