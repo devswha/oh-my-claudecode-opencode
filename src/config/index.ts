@@ -8,7 +8,66 @@ const AgentConfigSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   top_p: z.number().min(0).max(1).optional(),
   disable: z.boolean().optional(),
+  enabled: z.boolean().optional(),
   prompt_append: z.string().optional(),
+});
+
+// Features configuration
+const FeaturesConfigSchema = z.object({
+  parallelExecution: z.boolean().optional(),
+  lspTools: z.boolean().optional(),
+  astTools: z.boolean().optional(),
+  continuationEnforcement: z.boolean().optional(),
+  autoContextInjection: z.boolean().optional(),
+});
+
+// MCP Servers configuration
+const McpServerConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  apiKey: z.string().optional(),
+});
+
+const McpServersConfigSchema = z.object({
+  exa: McpServerConfigSchema.optional(),
+  context7: McpServerConfigSchema.optional(),
+  grepApp: McpServerConfigSchema.optional(),
+});
+
+// Permissions configuration
+const PermissionsConfigSchema = z.object({
+  allowBash: z.boolean().optional(),
+  allowEdit: z.boolean().optional(),
+  allowWrite: z.boolean().optional(),
+  maxBackgroundTasks: z.number().min(1).max(20).optional(),
+});
+
+// Magic Keywords configuration
+const MagicKeywordsConfigSchema = z.object({
+  ultrawork: z.array(z.string()).optional(),
+  search: z.array(z.string()).optional(),
+  analyze: z.array(z.string()).optional(),
+  ultrathink: z.array(z.string()).optional(),
+});
+
+// Routing configuration
+const AgentOverrideSchema = z.object({
+  tier: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  reason: z.string().optional(),
+});
+
+const RoutingConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  defaultTier: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+  escalationEnabled: z.boolean().optional(),
+  maxEscalations: z.number().min(0).max(5).optional(),
+  tierModels: z.object({
+    LOW: z.string().optional(),
+    MEDIUM: z.string().optional(),
+    HIGH: z.string().optional(),
+  }).optional(),
+  agentOverrides: z.record(z.string(), AgentOverrideSchema).optional(),
+  escalationKeywords: z.array(z.string()).optional(),
+  simplificationKeywords: z.array(z.string()).optional(),
 });
 
 const ModelMappingConfigSchema = z.object({
@@ -79,6 +138,11 @@ const OmoOmcsConfigSchema = z.object({
   $schema: z.string().optional(),
   agents: z.record(z.string(), AgentConfigSchema).optional(),
   model_mapping: ModelMappingConfigSchema.optional(),
+  features: FeaturesConfigSchema.optional(),
+  mcpServers: McpServersConfigSchema.optional(),
+  permissions: PermissionsConfigSchema.optional(),
+  magicKeywords: MagicKeywordsConfigSchema.optional(),
+  routing: RoutingConfigSchema.optional(),
   disabled_hooks: z.array(z.string()).optional(),
   disabled_agents: z.array(z.string()).optional(),
   disabled_skills: z.array(z.string()).optional(),
@@ -110,6 +174,11 @@ export type ScientistConfig = z.infer<typeof ScientistConfigSchema>;
 export type OrchestratorConfig = z.infer<typeof OrchestratorConfigSchema>;
 export type ContextRecoveryConfig = z.infer<typeof ContextRecoveryConfigSchema>;
 export type EditErrorRecoveryConfig = z.infer<typeof EditErrorRecoveryConfigSchema>;
+export type FeaturesConfig = z.infer<typeof FeaturesConfigSchema>;
+export type McpServersConfig = z.infer<typeof McpServersConfigSchema>;
+export type PermissionsConfig = z.infer<typeof PermissionsConfigSchema>;
+export type MagicKeywordsConfig = z.infer<typeof MagicKeywordsConfigSchema>;
+export type RoutingConfig = z.infer<typeof RoutingConfigSchema>;
 
 export type HookName =
   | "todo-continuation-enforcer"
@@ -130,9 +199,19 @@ export type HookName =
   | "omc-orchestrator";
 
 export type AgentName =
+  | "omc"
+  | "architect"
+  | "researcher"
+  | "explore"
+  | "frontendEngineer"
+  | "documentWriter"
+  | "multimodalLooker"
+  | "critic"
+  | "analyst"
+  | "planner"
+  // Legacy names for backward compatibility
   | "oracle"
   | "librarian"
-  | "explore"
   | "frontend-ui-ux-engineer"
   | "document-writer"
   | "multimodal-looker";
@@ -145,10 +224,10 @@ function stripJsonComments(content: string): string {
 
 export function loadConfig(directory: string): OmoOmcsConfig {
   const configPaths = [
-    join(directory, ".opencode", "omo-omcs.json"),
-    join(directory, ".opencode", "omo-omcs.jsonc"),
-    join(process.env.HOME || "", ".config", "opencode", "omo-omcs.json"),
-    join(process.env.HOME || "", ".config", "opencode", "omo-omcs.jsonc"),
+    join(directory, ".opencode", "omco.json"),
+    join(directory, ".opencode", "omco.jsonc"),
+    join(process.env.HOME || "", ".config", "opencode", "omco.json"),
+    join(process.env.HOME || "", ".config", "opencode", "omco.jsonc"),
   ];
 
   for (const configPath of configPaths) {
@@ -166,12 +245,66 @@ export function loadConfig(directory: string): OmoOmcsConfig {
 
   return {
     agents: {
-      oracle: { model: "openai/gpt-5.2" },
-      librarian: { model: "google/gemini-3-flash" },
-      explore: { model: "google/gemini-3-flash" },
-      "frontend-ui-ux-engineer": { model: "google/gemini-3-pro-preview" },
-      "document-writer": { model: "google/gemini-3-flash" },
-      "multimodal-looker": { model: "google/gemini-3-flash" },
+      omc: { model: 'github-copilot/claude-opus-4', enabled: true },
+      architect: { model: 'github-copilot/claude-opus-4', enabled: true },
+      researcher: { model: 'github-copilot/claude-sonnet-4', enabled: true },
+      explore: { model: 'github-copilot/claude-haiku-4', enabled: true },
+      frontendEngineer: { model: 'github-copilot/claude-sonnet-4', enabled: true },
+      documentWriter: { model: 'github-copilot/claude-haiku-4', enabled: true },
+      multimodalLooker: { model: 'github-copilot/claude-sonnet-4', enabled: true },
+      critic: { model: 'github-copilot/claude-opus-4', enabled: true },
+      analyst: { model: 'github-copilot/claude-opus-4', enabled: true },
+      planner: { model: 'github-copilot/claude-opus-4', enabled: true },
+    },
+    features: {
+      parallelExecution: true,
+      lspTools: true,
+      astTools: true,
+      continuationEnforcement: true,
+      autoContextInjection: true,
+    },
+    mcpServers: {
+      exa: { enabled: true },
+      context7: { enabled: true },
+      grepApp: { enabled: true },
+    },
+    permissions: {
+      allowBash: true,
+      allowEdit: true,
+      allowWrite: true,
+      maxBackgroundTasks: 5,
+    },
+    magicKeywords: {
+      ultrawork: ['ultrawork', 'ulw', 'uw'],
+      search: ['search', 'find', 'locate'],
+      analyze: ['analyze', 'investigate', 'examine'],
+      ultrathink: ['ultrathink', 'think', 'reason', 'ponder'],
+    },
+    routing: {
+      enabled: true,
+      defaultTier: 'MEDIUM',
+      escalationEnabled: true,
+      maxEscalations: 2,
+      tierModels: {
+        LOW: 'github-copilot/claude-haiku-4',
+        MEDIUM: 'github-copilot/claude-sonnet-4',
+        HIGH: 'github-copilot/claude-opus-4',
+      },
+      agentOverrides: {
+        architect: { tier: 'HIGH', reason: 'Advisory agent requires deep reasoning' },
+        planner: { tier: 'HIGH', reason: 'Strategic planning requires deep reasoning' },
+        critic: { tier: 'HIGH', reason: 'Critical review requires deep reasoning' },
+        analyst: { tier: 'HIGH', reason: 'Pre-planning analysis requires deep reasoning' },
+        explore: { tier: 'LOW', reason: 'Exploration is search-focused' },
+        documentWriter: { tier: 'LOW', reason: 'Documentation is straightforward' },
+      },
+      escalationKeywords: [
+        'critical', 'production', 'urgent', 'security', 'breaking',
+        'architecture', 'refactor', 'redesign', 'root cause',
+      ],
+      simplificationKeywords: [
+        'find', 'list', 'show', 'where', 'search', 'locate', 'grep',
+      ],
     },
     background_task: {
       defaultConcurrency: 5,

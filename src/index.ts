@@ -19,7 +19,7 @@ import { log } from "./shared/logger";
 
 const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
   const pluginConfig = loadConfig(ctx.directory);
-  console.log("[omo-omcs] Config loaded:", pluginConfig);
+  console.log("[omco] Config loaded:", pluginConfig);
 
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);

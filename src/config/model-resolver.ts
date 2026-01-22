@@ -30,9 +30,9 @@ export interface ModelResolutionResult {
 }
 
 export const HARDCODED_TIER_DEFAULTS: TierModelMapping = {
-  haiku: "anthropic/claude-haiku",
-  sonnet: "anthropic/claude-sonnet-4",
-  opus: "anthropic/claude-opus-4",
+  haiku: "github-copilot/claude-haiku-4.5",
+  sonnet: "github-copilot/claude-sonnet-4.5",
+  opus: "github-copilot/claude-opus-4.5",
 };
 
 /**

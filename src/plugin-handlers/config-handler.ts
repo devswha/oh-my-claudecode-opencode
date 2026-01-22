@@ -137,37 +137,37 @@ Return thorough analysis with evidence and recommendations.`,
     description: "Deep analysis and investigation",
     agent: "Ssalsyphus",
   },
-  "update-ssalsyphus": {
-    template: `Update oh-my-ssalsyphus plugin to the latest version.
+  "update-omco": {
+    template: `Update oh-my-claudecode-opencode plugin to the latest version.
 
 Run this command in your terminal:
 
 \`\`\`bash
-cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+cd ~/.opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
 \`\`\`
 
 After the update completes:
 1. Check the version number in the output
 2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
 
-Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
-    description: "Update oh-my-ssalsyphus plugin to latest version",
+Current changelog: https://github.com/devswha/oh-my-claudecode-opencode/commits/main`,
+    description: "Update oh-my-claudecode-opencode plugin to latest version",
   },
   "update": {
-    template: `Update oh-my-ssalsyphus plugin to the latest version.
+    template: `Update oh-my-claudecode-opencode plugin to the latest version.
 
 Run this command in your terminal:
 
 \`\`\`bash
-cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+cd ~/.opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
 \`\`\`
 
 After the update completes:
 1. Check the version number in the output
 2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
 
-Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
-    description: "Update oh-my-ssalsyphus plugin (alias for /update-ssalsyphus)",
+Current changelog: https://github.com/devswha/oh-my-claudecode-opencode/commits/main`,
+    description: "Update oh-my-claudecode-opencode plugin (alias for /update-omco)",
   },
   "cancel-ralph": {
     template: `Cancel the currently active Ralph Loop.
@@ -214,7 +214,7 @@ Since v3.0, Ralph automatically activates Ultrawork. If you see \`linked_to_ralp
   "doctor": {
     template: `[DOCTOR MODE ACTIVATED - DIAGNOSTICS]
 
-Run installation diagnostics for oh-my-ssalsyphus:
+Run installation diagnostics for oh-my-claudecode-opencode:
 
 1. Check plugin version
 2. Check for legacy hooks
@@ -222,13 +222,13 @@ Run installation diagnostics for oh-my-ssalsyphus:
 4. Check for stale state files
 
 Report any issues found and suggest fixes.`,
-    description: "Diagnose and fix oh-my-ssalsyphus installation issues",
+    description: "Diagnose and fix oh-my-claudecode-opencode installation issues",
     agent: "Ssalsyphus",
   },
   "status": {
     template: `[STATUS CHECK - AGENT VISIBILITY]
 
-Check and display the current status of all omo-omcs systems.
+Check and display the current status of all omco systems.
 
 ## Steps
 
@@ -248,7 +248,7 @@ echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo 
 2. **Format Status Report**:
 
 \`\`\`
-📊 omo-omcs Status (v0.2.0)
+📊 omco Status (v0.2.0)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🤖 Autopilot: [active/inactive] (phase: X)
 🔄 Ralph Loop: [active/inactive] (iteration: X/Y)
@@ -264,7 +264,7 @@ echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo 
 3. **Show Active Agents** if any mode is active
 
 4. **Warn if Stuck** - If any state shows no progress for >5 minutes, warn user`,
-    description: "Show current status of all omo-omcs modes and agents",
+    description: "Show current status of all omco modes and agents",
     agent: "Ssalsyphus",
   },
   "cancel-ultraqa": {
@@ -432,7 +432,7 @@ Just say "stop", "cancel", or "abort" - I'll figure out what to stop based on co
 | /doctor | Diagnose installation issues |
 
 *Version: 0.2.0 (synced with omc 3.3.6)*`,
-    description: "Show oh-my-ssalsyphus usage guide",
+    description: "Show oh-my-claudecode-opencode usage guide",
     agent: "Ssalsyphus",
   },
   "learner": {

@@ -13553,7 +13553,54 @@ var AgentConfigSchema = exports_external.object({
   temperature: exports_external.number().min(0).max(2).optional(),
   top_p: exports_external.number().min(0).max(1).optional(),
   disable: exports_external.boolean().optional(),
+  enabled: exports_external.boolean().optional(),
   prompt_append: exports_external.string().optional()
+});
+var FeaturesConfigSchema = exports_external.object({
+  parallelExecution: exports_external.boolean().optional(),
+  lspTools: exports_external.boolean().optional(),
+  astTools: exports_external.boolean().optional(),
+  continuationEnforcement: exports_external.boolean().optional(),
+  autoContextInjection: exports_external.boolean().optional()
+});
+var McpServerConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  apiKey: exports_external.string().optional()
+});
+var McpServersConfigSchema = exports_external.object({
+  exa: McpServerConfigSchema.optional(),
+  context7: McpServerConfigSchema.optional(),
+  grepApp: McpServerConfigSchema.optional()
+});
+var PermissionsConfigSchema = exports_external.object({
+  allowBash: exports_external.boolean().optional(),
+  allowEdit: exports_external.boolean().optional(),
+  allowWrite: exports_external.boolean().optional(),
+  maxBackgroundTasks: exports_external.number().min(1).max(20).optional()
+});
+var MagicKeywordsConfigSchema = exports_external.object({
+  ultrawork: exports_external.array(exports_external.string()).optional(),
+  search: exports_external.array(exports_external.string()).optional(),
+  analyze: exports_external.array(exports_external.string()).optional(),
+  ultrathink: exports_external.array(exports_external.string()).optional()
+});
+var AgentOverrideSchema = exports_external.object({
+  tier: exports_external.enum(["LOW", "MEDIUM", "HIGH"]),
+  reason: exports_external.string().optional()
+});
+var RoutingConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  defaultTier: exports_external.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+  escalationEnabled: exports_external.boolean().optional(),
+  maxEscalations: exports_external.number().min(0).max(5).optional(),
+  tierModels: exports_external.object({
+    LOW: exports_external.string().optional(),
+    MEDIUM: exports_external.string().optional(),
+    HIGH: exports_external.string().optional()
+  }).optional(),
+  agentOverrides: exports_external.record(exports_external.string(), AgentOverrideSchema).optional(),
+  escalationKeywords: exports_external.array(exports_external.string()).optional(),
+  simplificationKeywords: exports_external.array(exports_external.string()).optional()
 });
 var ModelMappingConfigSchema = exports_external.object({
   tierDefaults: exports_external.object({
@@ -13611,6 +13658,11 @@ var OmoOmcsConfigSchema = exports_external.object({
   $schema: exports_external.string().optional(),
   agents: exports_external.record(exports_external.string(), AgentConfigSchema).optional(),
   model_mapping: ModelMappingConfigSchema.optional(),
+  features: FeaturesConfigSchema.optional(),
+  mcpServers: McpServersConfigSchema.optional(),
+  permissions: PermissionsConfigSchema.optional(),
+  magicKeywords: MagicKeywordsConfigSchema.optional(),
+  routing: RoutingConfigSchema.optional(),
   disabled_hooks: exports_external.array(exports_external.string()).optional(),
   disabled_agents: exports_external.array(exports_external.string()).optional(),
   disabled_skills: exports_external.array(exports_external.string()).optional(),
@@ -13635,10 +13687,10 @@ function stripJsonComments(content) {
 }
 function loadConfig(directory) {
   const configPaths = [
-    join(directory, ".opencode", "omo-omcs.json"),
-    join(directory, ".opencode", "omo-omcs.jsonc"),
-    join(process.env.HOME || "", ".config", "opencode", "omo-omcs.json"),
-    join(process.env.HOME || "", ".config", "opencode", "omo-omcs.jsonc")
+    join(directory, ".opencode", "omco.json"),
+    join(directory, ".opencode", "omco.jsonc"),
+    join(process.env.HOME || "", ".config", "opencode", "omco.json"),
+    join(process.env.HOME || "", ".config", "opencode", "omco.jsonc")
   ];
   for (const configPath of configPaths) {
     if (existsSync(configPath)) {
@@ -13654,12 +13706,79 @@ function loadConfig(directory) {
   }
   return {
     agents: {
-      oracle: { model: "openai/gpt-5.2" },
-      librarian: { model: "google/gemini-3-flash" },
-      explore: { model: "google/gemini-3-flash" },
-      "frontend-ui-ux-engineer": { model: "google/gemini-3-pro-preview" },
-      "document-writer": { model: "google/gemini-3-flash" },
-      "multimodal-looker": { model: "google/gemini-3-flash" }
+      omc: { model: "github-copilot/claude-opus-4", enabled: true },
+      architect: { model: "github-copilot/claude-opus-4", enabled: true },
+      researcher: { model: "github-copilot/claude-sonnet-4", enabled: true },
+      explore: { model: "github-copilot/claude-haiku-4", enabled: true },
+      frontendEngineer: { model: "github-copilot/claude-sonnet-4", enabled: true },
+      documentWriter: { model: "github-copilot/claude-haiku-4", enabled: true },
+      multimodalLooker: { model: "github-copilot/claude-sonnet-4", enabled: true },
+      critic: { model: "github-copilot/claude-opus-4", enabled: true },
+      analyst: { model: "github-copilot/claude-opus-4", enabled: true },
+      planner: { model: "github-copilot/claude-opus-4", enabled: true }
+    },
+    features: {
+      parallelExecution: true,
+      lspTools: true,
+      astTools: true,
+      continuationEnforcement: true,
+      autoContextInjection: true
+    },
+    mcpServers: {
+      exa: { enabled: true },
+      context7: { enabled: true },
+      grepApp: { enabled: true }
+    },
+    permissions: {
+      allowBash: true,
+      allowEdit: true,
+      allowWrite: true,
+      maxBackgroundTasks: 5
+    },
+    magicKeywords: {
+      ultrawork: ["ultrawork", "ulw", "uw"],
+      search: ["search", "find", "locate"],
+      analyze: ["analyze", "investigate", "examine"],
+      ultrathink: ["ultrathink", "think", "reason", "ponder"]
+    },
+    routing: {
+      enabled: true,
+      defaultTier: "MEDIUM",
+      escalationEnabled: true,
+      maxEscalations: 2,
+      tierModels: {
+        LOW: "github-copilot/claude-haiku-4",
+        MEDIUM: "github-copilot/claude-sonnet-4",
+        HIGH: "github-copilot/claude-opus-4"
+      },
+      agentOverrides: {
+        architect: { tier: "HIGH", reason: "Advisory agent requires deep reasoning" },
+        planner: { tier: "HIGH", reason: "Strategic planning requires deep reasoning" },
+        critic: { tier: "HIGH", reason: "Critical review requires deep reasoning" },
+        analyst: { tier: "HIGH", reason: "Pre-planning analysis requires deep reasoning" },
+        explore: { tier: "LOW", reason: "Exploration is search-focused" },
+        documentWriter: { tier: "LOW", reason: "Documentation is straightforward" }
+      },
+      escalationKeywords: [
+        "critical",
+        "production",
+        "urgent",
+        "security",
+        "breaking",
+        "architecture",
+        "refactor",
+        "redesign",
+        "root cause"
+      ],
+      simplificationKeywords: [
+        "find",
+        "list",
+        "show",
+        "where",
+        "search",
+        "locate",
+        "grep"
+      ]
     },
     background_task: {
       defaultConcurrency: 5
@@ -13691,12 +13810,12 @@ function log(message, data) {
     return;
   const timestamp = new Date().toISOString();
   const dataStr = data ? ` ${JSON.stringify(data)}` : "";
-  console.log(`[omo-omcs] ${timestamp} ${message}${dataStr}`);
+  console.log(`[omco] ${timestamp} ${message}${dataStr}`);
 }
 function warn(message, data) {
   const timestamp = new Date().toISOString();
   const dataStr = data ? ` ${JSON.stringify(data)}` : "";
-  console.warn(`[omo-omcs] ${timestamp} WARN: ${message}${dataStr}`);
+  console.warn(`[omco] ${timestamp} WARN: ${message}${dataStr}`);
 }
 
 // src/tools/background-manager.ts
@@ -27105,9 +27224,9 @@ function getCanonicalName(name) {
 
 // src/config/model-resolver.ts
 var HARDCODED_TIER_DEFAULTS = {
-  haiku: "anthropic/claude-haiku",
-  sonnet: "anthropic/claude-sonnet-4",
-  opus: "anthropic/claude-opus-4"
+  haiku: "github-copilot/claude-haiku-4.5",
+  sonnet: "github-copilot/claude-sonnet-4.5",
+  opus: "github-copilot/claude-opus-4.5"
 };
 function isValidModelFormat(model) {
   return /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(model);
@@ -27280,37 +27399,37 @@ Return thorough analysis with evidence and recommendations.`,
     description: "Deep analysis and investigation",
     agent: "Ssalsyphus"
   },
-  "update-ssalsyphus": {
-    template: `Update oh-my-ssalsyphus plugin to the latest version.
+  "update-omco": {
+    template: `Update oh-my-claudecode-opencode plugin to the latest version.
 
 Run this command in your terminal:
 
 \`\`\`bash
-cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+cd ~/.opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
 \`\`\`
 
 After the update completes:
 1. Check the version number in the output
 2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
 
-Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
-    description: "Update oh-my-ssalsyphus plugin to latest version"
+Current changelog: https://github.com/devswha/oh-my-claudecode-opencode/commits/main`,
+    description: "Update oh-my-claudecode-opencode plugin to latest version"
   },
   update: {
-    template: `Update oh-my-ssalsyphus plugin to the latest version.
+    template: `Update oh-my-claudecode-opencode plugin to the latest version.
 
 Run this command in your terminal:
 
 \`\`\`bash
-cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+cd ~/.opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
 \`\`\`
 
 After the update completes:
 1. Check the version number in the output
 2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
 
-Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
-    description: "Update oh-my-ssalsyphus plugin (alias for /update-ssalsyphus)"
+Current changelog: https://github.com/devswha/oh-my-claudecode-opencode/commits/main`,
+    description: "Update oh-my-claudecode-opencode plugin (alias for /update-omco)"
   },
   "cancel-ralph": {
     template: `Cancel the currently active Ralph Loop.
@@ -27357,7 +27476,7 @@ Since v3.0, Ralph automatically activates Ultrawork. If you see \`linked_to_ralp
   doctor: {
     template: `[DOCTOR MODE ACTIVATED - DIAGNOSTICS]
 
-Run installation diagnostics for oh-my-ssalsyphus:
+Run installation diagnostics for oh-my-claudecode-opencode:
 
 1. Check plugin version
 2. Check for legacy hooks
@@ -27365,13 +27484,13 @@ Run installation diagnostics for oh-my-ssalsyphus:
 4. Check for stale state files
 
 Report any issues found and suggest fixes.`,
-    description: "Diagnose and fix oh-my-ssalsyphus installation issues",
+    description: "Diagnose and fix oh-my-claudecode-opencode installation issues",
     agent: "Ssalsyphus"
   },
   status: {
     template: `[STATUS CHECK - AGENT VISIBILITY]
 
-Check and display the current status of all omo-omcs systems.
+Check and display the current status of all omco systems.
 
 ## Steps
 
@@ -27391,7 +27510,7 @@ echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo 
 2. **Format Status Report**:
 
 \`\`\`
-\uD83D\uDCCA omo-omcs Status (v0.2.0)
+\uD83D\uDCCA omco Status (v0.2.0)
 \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
 \uD83E\uDD16 Autopilot: [active/inactive] (phase: X)
 \uD83D\uDD04 Ralph Loop: [active/inactive] (iteration: X/Y)
@@ -27407,7 +27526,7 @@ echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo 
 3. **Show Active Agents** if any mode is active
 
 4. **Warn if Stuck** - If any state shows no progress for >5 minutes, warn user`,
-    description: "Show current status of all omo-omcs modes and agents",
+    description: "Show current status of all omco modes and agents",
     agent: "Ssalsyphus"
   },
   "cancel-ultraqa": {
@@ -27575,7 +27694,7 @@ Just say "stop", "cancel", or "abort" - I'll figure out what to stop based on co
 | /doctor | Diagnose installation issues |
 
 *Version: 0.2.0 (synced with omc 3.3.6)*`,
-    description: "Show oh-my-ssalsyphus usage guide",
+    description: "Show oh-my-claudecode-opencode usage guide",
     agent: "Ssalsyphus"
   },
   learner: {
@@ -30911,7 +31030,7 @@ function getAgentEmoji(agentName) {
 // src/index.ts
 var OmoOmcsPlugin = async (ctx) => {
   const pluginConfig = loadConfig(ctx.directory);
-  console.log("[omo-omcs] Config loaded:", pluginConfig);
+  console.log("[omco] Config loaded:", pluginConfig);
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
   const callOmoAgent = createCallOmoAgent(ctx, backgroundManager);

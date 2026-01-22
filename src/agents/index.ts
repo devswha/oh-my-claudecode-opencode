@@ -1,5 +1,5 @@
 /**
- * Agent definitions for omo-omcs (oh-my-claudecode v3.0.11)
+ * Agent definitions for omco (oh-my-claudecode v3.0.11)
  *
  * These define the specialized subagents available for delegation.
  * Each agent has specific capabilities and use cases.

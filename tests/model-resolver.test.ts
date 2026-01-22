@@ -356,3 +356,95 @@ describe("ModelResolver.getTierDefaults", () => {
     expect(defaultsAgain.haiku).toBe(HARDCODED_TIER_DEFAULTS.haiku);
   });
 });
+
+describe("config loading integration", () => {
+  test("loads tierDefaults from model_mapping config", () => {
+    // Simulate config object structure
+    const config = {
+      model_mapping: {
+        tierDefaults: {
+          haiku: "google/gemini-2-flash",
+          sonnet: "google/gemini-2-pro",
+          opus: "openai/gpt-5",
+        },
+      },
+    };
+
+    const resolver = new ModelResolver(config.model_mapping);
+
+    const haikuResult = resolver.resolve("test-agent", "haiku");
+    expect(haikuResult.model).toBe("google/gemini-2-flash");
+
+    const sonnetResult = resolver.resolve("test-agent", "sonnet");
+    expect(sonnetResult.model).toBe("google/gemini-2-pro");
+
+    const opusResult = resolver.resolve("test-agent", "opus");
+    expect(opusResult.model).toBe("openai/gpt-5");
+  });
+
+  test("partial tierDefaults merge with hardcoded defaults", () => {
+    const config = {
+      model_mapping: {
+        tierDefaults: {
+          haiku: "google/gemini-2-flash",
+          // sonnet and opus not specified
+        },
+      },
+    };
+
+    const resolver = new ModelResolver(config.model_mapping);
+
+    // Custom haiku
+    const haikuResult = resolver.resolve("test-agent", "haiku");
+    expect(haikuResult.model).toBe("google/gemini-2-flash");
+
+    // Fallback to hardcoded sonnet
+    const sonnetResult = resolver.resolve("test-agent", "sonnet");
+    expect(sonnetResult.model).toBe(HARDCODED_TIER_DEFAULTS.sonnet);
+
+    // Fallback to hardcoded opus
+    const opusResult = resolver.resolve("test-agent", "opus");
+    expect(opusResult.model).toBe(HARDCODED_TIER_DEFAULTS.opus);
+  });
+
+  test("empty model_mapping uses hardcoded defaults", () => {
+    const config = {
+      model_mapping: {},
+    };
+
+    const resolver = new ModelResolver(config.model_mapping);
+
+    const result = resolver.resolve("test-agent", "sonnet");
+    expect(result.model).toBe(HARDCODED_TIER_DEFAULTS.sonnet);
+  });
+
+  test("undefined model_mapping uses hardcoded defaults", () => {
+    const resolver = new ModelResolver(undefined);
+
+    const result = resolver.resolve("test-agent", "opus");
+    expect(result.model).toBe(HARDCODED_TIER_DEFAULTS.opus);
+  });
+
+  test("per-agent model overrides tierDefaults", () => {
+    const config = {
+      model_mapping: {
+        tierDefaults: {
+          haiku: "google/gemini-2-flash",
+          sonnet: "google/gemini-2-pro",
+          opus: "openai/gpt-5",
+        },
+      },
+    };
+
+    const resolver = new ModelResolver(config.model_mapping);
+
+    // Per-agent model takes precedence over tier resolution
+    const agentOverride = {
+      model: "anthropic/claude-sonnet-4",
+    };
+
+    const result = resolver.resolve("test-agent", "haiku", agentOverride);
+    expect(result.model).toBe("anthropic/claude-sonnet-4");
+    expect(result.source).toBe("per-agent-override");
+  });
+});

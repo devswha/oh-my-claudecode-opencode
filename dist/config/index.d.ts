@@ -9,7 +9,66 @@ declare const AgentConfigSchema: z.ZodObject<{
     temperature: z.ZodOptional<z.ZodNumber>;
     top_p: z.ZodOptional<z.ZodNumber>;
     disable: z.ZodOptional<z.ZodBoolean>;
+    enabled: z.ZodOptional<z.ZodBoolean>;
     prompt_append: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+declare const FeaturesConfigSchema: z.ZodObject<{
+    parallelExecution: z.ZodOptional<z.ZodBoolean>;
+    lspTools: z.ZodOptional<z.ZodBoolean>;
+    astTools: z.ZodOptional<z.ZodBoolean>;
+    continuationEnforcement: z.ZodOptional<z.ZodBoolean>;
+    autoContextInjection: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+declare const McpServersConfigSchema: z.ZodObject<{
+    exa: z.ZodOptional<z.ZodObject<{
+        enabled: z.ZodOptional<z.ZodBoolean>;
+        apiKey: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    context7: z.ZodOptional<z.ZodObject<{
+        enabled: z.ZodOptional<z.ZodBoolean>;
+        apiKey: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    grepApp: z.ZodOptional<z.ZodObject<{
+        enabled: z.ZodOptional<z.ZodBoolean>;
+        apiKey: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+declare const PermissionsConfigSchema: z.ZodObject<{
+    allowBash: z.ZodOptional<z.ZodBoolean>;
+    allowEdit: z.ZodOptional<z.ZodBoolean>;
+    allowWrite: z.ZodOptional<z.ZodBoolean>;
+    maxBackgroundTasks: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strip>;
+declare const MagicKeywordsConfigSchema: z.ZodObject<{
+    ultrawork: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    search: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    analyze: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    ultrathink: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
+declare const RoutingConfigSchema: z.ZodObject<{
+    enabled: z.ZodOptional<z.ZodBoolean>;
+    defaultTier: z.ZodOptional<z.ZodEnum<{
+        LOW: "LOW";
+        MEDIUM: "MEDIUM";
+        HIGH: "HIGH";
+    }>>;
+    escalationEnabled: z.ZodOptional<z.ZodBoolean>;
+    maxEscalations: z.ZodOptional<z.ZodNumber>;
+    tierModels: z.ZodOptional<z.ZodObject<{
+        LOW: z.ZodOptional<z.ZodString>;
+        MEDIUM: z.ZodOptional<z.ZodString>;
+        HIGH: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    agentOverrides: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+        tier: z.ZodEnum<{
+            LOW: "LOW";
+            MEDIUM: "MEDIUM";
+            HIGH: "HIGH";
+        }>;
+        reason: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>;
+    escalationKeywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    simplificationKeywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
 }, z.core.$strip>;
 declare const ModelMappingConfigSchema: z.ZodObject<{
     tierDefaults: z.ZodOptional<z.ZodObject<{
@@ -87,6 +146,7 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
         temperature: z.ZodOptional<z.ZodNumber>;
         top_p: z.ZodOptional<z.ZodNumber>;
         disable: z.ZodOptional<z.ZodBoolean>;
+        enabled: z.ZodOptional<z.ZodBoolean>;
         prompt_append: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>>;
     model_mapping: z.ZodOptional<z.ZodObject<{
@@ -96,6 +156,64 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
             opus: z.ZodOptional<z.ZodString>;
         }, z.core.$strip>>;
         debugLogging: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    features: z.ZodOptional<z.ZodObject<{
+        parallelExecution: z.ZodOptional<z.ZodBoolean>;
+        lspTools: z.ZodOptional<z.ZodBoolean>;
+        astTools: z.ZodOptional<z.ZodBoolean>;
+        continuationEnforcement: z.ZodOptional<z.ZodBoolean>;
+        autoContextInjection: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    mcpServers: z.ZodOptional<z.ZodObject<{
+        exa: z.ZodOptional<z.ZodObject<{
+            enabled: z.ZodOptional<z.ZodBoolean>;
+            apiKey: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        context7: z.ZodOptional<z.ZodObject<{
+            enabled: z.ZodOptional<z.ZodBoolean>;
+            apiKey: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        grepApp: z.ZodOptional<z.ZodObject<{
+            enabled: z.ZodOptional<z.ZodBoolean>;
+            apiKey: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    permissions: z.ZodOptional<z.ZodObject<{
+        allowBash: z.ZodOptional<z.ZodBoolean>;
+        allowEdit: z.ZodOptional<z.ZodBoolean>;
+        allowWrite: z.ZodOptional<z.ZodBoolean>;
+        maxBackgroundTasks: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>>;
+    magicKeywords: z.ZodOptional<z.ZodObject<{
+        ultrawork: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        search: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        analyze: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        ultrathink: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
+    routing: z.ZodOptional<z.ZodObject<{
+        enabled: z.ZodOptional<z.ZodBoolean>;
+        defaultTier: z.ZodOptional<z.ZodEnum<{
+            LOW: "LOW";
+            MEDIUM: "MEDIUM";
+            HIGH: "HIGH";
+        }>>;
+        escalationEnabled: z.ZodOptional<z.ZodBoolean>;
+        maxEscalations: z.ZodOptional<z.ZodNumber>;
+        tierModels: z.ZodOptional<z.ZodObject<{
+            LOW: z.ZodOptional<z.ZodString>;
+            MEDIUM: z.ZodOptional<z.ZodString>;
+            HIGH: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        agentOverrides: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+            tier: z.ZodEnum<{
+                LOW: "LOW";
+                MEDIUM: "MEDIUM";
+                HIGH: "HIGH";
+            }>;
+            reason: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>>;
+        escalationKeywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        simplificationKeywords: z.ZodOptional<z.ZodArray<z.ZodString>>;
     }, z.core.$strip>>;
     disabled_hooks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     disabled_agents: z.ZodOptional<z.ZodArray<z.ZodString>>;
@@ -173,7 +291,12 @@ export type ScientistConfig = z.infer<typeof ScientistConfigSchema>;
 export type OrchestratorConfig = z.infer<typeof OrchestratorConfigSchema>;
 export type ContextRecoveryConfig = z.infer<typeof ContextRecoveryConfigSchema>;
 export type EditErrorRecoveryConfig = z.infer<typeof EditErrorRecoveryConfigSchema>;
+export type FeaturesConfig = z.infer<typeof FeaturesConfigSchema>;
+export type McpServersConfig = z.infer<typeof McpServersConfigSchema>;
+export type PermissionsConfig = z.infer<typeof PermissionsConfigSchema>;
+export type MagicKeywordsConfig = z.infer<typeof MagicKeywordsConfigSchema>;
+export type RoutingConfig = z.infer<typeof RoutingConfigSchema>;
 export type HookName = "todo-continuation-enforcer" | "keyword-detector" | "ralph-loop" | "session-recovery" | "agent-usage-reminder" | "context-window-monitor" | "comment-checker" | "tool-output-truncator" | "system-prompt-injector" | "persistent-mode" | "remember-tag-processor" | "autopilot" | "ultraqa-loop" | "context-recovery" | "edit-error-recovery" | "omc-orchestrator";
-export type AgentName = "oracle" | "librarian" | "explore" | "frontend-ui-ux-engineer" | "document-writer" | "multimodal-looker";
+export type AgentName = "omc" | "architect" | "researcher" | "explore" | "frontendEngineer" | "documentWriter" | "multimodalLooker" | "critic" | "analyst" | "planner" | "oracle" | "librarian" | "frontend-ui-ux-engineer" | "document-writer" | "multimodal-looker";
 export declare function loadConfig(directory: string): OmoOmcsConfig;
 export {};

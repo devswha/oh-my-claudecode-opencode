@@ -1,0 +1,564 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "omco Configuration",
+  "description": "Configuration schema for Oh My OpenCode plugin",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference URL"
+    },
+    "model_mapping": {
+      "type": "object",
+      "description": "Model tier mapping configuration for custom providers",
+      "properties": {
+        "tierDefaults": {
+          "type": "object",
+          "description": "Map tier names (haiku/sonnet/opus) to concrete provider/model strings",
+          "properties": {
+            "haiku": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$",
+              "description": "Model for haiku tier (fast/cheap). Format: provider/model-name",
+              "examples": ["google/gemini-2-flash", "openai/gpt-4o-mini"]
+            },
+            "sonnet": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$",
+              "description": "Model for sonnet tier (balanced). Format: provider/model-name",
+              "examples": ["google/gemini-2-pro", "openai/gpt-4o"]
+            },
+            "opus": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$",
+              "description": "Model for opus tier (most capable). Format: provider/model-name",
+              "examples": ["google/gemini-2-ultra", "openai/gpt-5"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging for model resolution"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agents": {
+      "type": "object",
+      "description": "Per-agent configuration overrides",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Concrete provider/model string (e.g., openai/gpt-4o). Takes precedence over tier.",
+            "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_.-]+$"
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["haiku", "sonnet", "opus"],
+            "description": "Override the agent's default tier"
+          },
+          "temperature": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2,
+            "description": "Override temperature for this agent"
+          },
+          "top_p": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Override top_p for this agent"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable or disable this agent"
+          },
+          "disable": {
+            "type": "boolean",
+            "description": "Disable this agent (legacy field)"
+          },
+          "prompt_append": {
+            "type": "string",
+            "description": "Append additional instructions to agent's system prompt"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "features": {
+      "type": "object",
+      "description": "Feature toggles",
+      "properties": {
+        "parallelExecution": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable parallel execution of tasks"
+        },
+        "lspTools": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable LSP integration with language servers"
+        },
+        "astTools": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AST tools using ast-grep"
+        },
+        "continuationEnforcement": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enforce task continuation until completion"
+        },
+        "autoContextInjection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically inject context from AGENTS.md/CLAUDE.md"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "MCP server configurations",
+      "properties": {
+        "exa": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "apiKey": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "context7": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "grepApp": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permission settings",
+      "properties": {
+        "allowBash": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow bash command execution"
+        },
+        "allowEdit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow file editing"
+        },
+        "allowWrite": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow file writing"
+        },
+        "maxBackgroundTasks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5,
+          "description": "Maximum concurrent background tasks"
+        }
+      },
+      "additionalProperties": false
+    },
+    "magicKeywords": {
+      "type": "object",
+      "description": "Magic keyword triggers for modes",
+      "properties": {
+        "ultrawork": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger ultrawork mode"
+        },
+        "search": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger search mode"
+        },
+        "analyze": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger analyze mode"
+        },
+        "ultrathink": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger ultrathink mode"
+        }
+      },
+      "additionalProperties": false
+    },
+    "routing": {
+      "type": "object",
+      "description": "Intelligent model routing configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable intelligent model routing"
+        },
+        "defaultTier": {
+          "type": "string",
+          "enum": ["LOW", "MEDIUM", "HIGH"],
+          "default": "MEDIUM",
+          "description": "Default tier for unspecified agents"
+        },
+        "escalationEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic tier escalation"
+        },
+        "maxEscalations": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 2,
+          "description": "Maximum number of tier escalations"
+        },
+        "tierModels": {
+          "type": "object",
+          "description": "Model mapping for each tier",
+          "properties": {
+            "LOW": { "type": "string" },
+            "MEDIUM": { "type": "string" },
+            "HIGH": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "agentOverrides": {
+          "type": "object",
+          "description": "Per-agent tier overrides",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "tier": {
+                "type": "string",
+                "enum": ["LOW", "MEDIUM", "HIGH"]
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": ["tier"],
+            "additionalProperties": false
+          }
+        },
+        "escalationKeywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger tier escalation"
+        },
+        "simplificationKeywords": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that trigger tier simplification"
+        }
+      },
+      "additionalProperties": false
+    },
+    "disabled_hooks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "todo-continuation-enforcer",
+          "keyword-detector",
+          "ralph-loop",
+          "session-recovery",
+          "agent-usage-reminder",
+          "context-window-monitor",
+          "comment-checker",
+          "tool-output-truncator",
+          "system-prompt-injector",
+          "persistent-mode",
+          "remember-tag-processor",
+          "autopilot",
+          "ultraqa-loop",
+          "context-recovery",
+          "edit-error-recovery",
+          "omc-orchestrator"
+        ]
+      },
+      "description": "List of hooks to disable",
+      "default": []
+    },
+    "disabled_agents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of agents to disable",
+      "default": []
+    },
+    "disabled_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of skills to disable",
+      "default": []
+    },
+    "disabled_mcps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of MCP servers to disable",
+      "default": []
+    },
+    "background_task": {
+      "type": "object",
+      "description": "Background task configuration",
+      "properties": {
+        "defaultConcurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5,
+          "description": "Default maximum number of concurrent background tasks"
+        },
+        "providerConcurrency": {
+          "type": "object",
+          "description": "Per-provider concurrency limits",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "modelConcurrency": {
+          "type": "object",
+          "description": "Per-model concurrency limits",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ralph_loop": {
+      "type": "object",
+      "description": "Ralph Loop configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Ralph Loop feature"
+        },
+        "default_max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100,
+          "description": "Maximum iterations before forcing stop"
+        }
+      },
+      "additionalProperties": false
+    },
+    "autopilot": {
+      "type": "object",
+      "description": "Autopilot mode configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Autopilot feature"
+        },
+        "maxPhaseRetries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum retries per autopilot phase"
+        },
+        "delegationEnforcement": {
+          "type": "string",
+          "enum": ["strict", "warn", "off"],
+          "default": "warn",
+          "description": "Enforcement level for delegation rules"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ultraqa": {
+      "type": "object",
+      "description": "UltraQA configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable UltraQA feature"
+        },
+        "maxIterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10,
+          "description": "Maximum QA iterations"
+        },
+        "buildCommand": {
+          "type": "string",
+          "description": "Custom build command"
+        },
+        "testCommand": {
+          "type": "string",
+          "description": "Custom test command"
+        },
+        "lintCommand": {
+          "type": "string",
+          "description": "Custom lint command"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scientist": {
+      "type": "object",
+      "description": "Scientist agent configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Scientist agent feature"
+        },
+        "replFallback": {
+          "type": "string",
+          "enum": ["bash", "disabled"],
+          "default": "bash",
+          "description": "Fallback mode when REPL is unavailable"
+        }
+      },
+      "additionalProperties": false
+    },
+    "orchestrator": {
+      "type": "object",
+      "description": "Orchestrator configuration",
+      "properties": {
+        "delegationEnforcement": {
+          "type": "string",
+          "enum": ["strict", "warn", "off"],
+          "default": "warn",
+          "description": "Enforcement level for delegation rules"
+        },
+        "auditLogEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable delegation audit logging"
+        }
+      },
+      "additionalProperties": false
+    },
+    "context_recovery": {
+      "type": "object",
+      "description": "Context recovery configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable context recovery feature"
+        }
+      },
+      "additionalProperties": false
+    },
+    "edit_error_recovery": {
+      "type": "object",
+      "description": "Edit error recovery configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable edit error recovery feature"
+        },
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum retry attempts for failed edits"
+        },
+        "showToasts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show toast notifications for edit errors"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tui_status": {
+      "type": "object",
+      "description": "TUI status notifications configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable TUI status notifications"
+        },
+        "showAgentNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show agent activity notifications"
+        },
+        "showModeChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show mode change notifications"
+        },
+        "toastDuration": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 30000,
+          "default": 3000,
+          "description": "Toast notification duration in milliseconds"
+        },
+        "trackMetrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Track agent execution metrics"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sisyphus_agent": {
+      "type": "object",
+      "description": "Sisyphus agent configuration",
+      "properties": {
+        "disabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable Sisyphus agent"
+        },
+        "planner_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable planner functionality"
+        },
+        "replace_plan": {
+          "type": "boolean",
+          "default": false,
+          "description": "Replace existing plan files"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

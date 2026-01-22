@@ -1,7 +1,7 @@
 {
-  "name": "oh-my-ssalsyphus",
-  "version": "0.2.4",
-  "description": "OpenCode port of oh-my-claudecode v3.3.6 - Multi-agent orchestration plugin",
+  "name": "oh-my-claudecode-opencode",
+  "version": "0.2.0",
+  "description": "OpenCode port of oh-my-claudecode - Multi-agent orchestration plugin (omco)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -14,7 +14,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./schema.json": "./assets/omo-omcs.schema.json"
+    "./schema.json": "./assets/omco.schema.json"
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
@@ -28,25 +28,25 @@
   "keywords": [
     "opencode",
     "plugin",
-    "sisyphus",
+    "oh-my-claudecode",
+    "omco",
     "multi-agent",
     "orchestration",
     "ai",
     "llm",
-    "oracle",
-    "librarian",
-    "ultrawork"
+    "ultrawork",
+    "ralph-loop"
   ],
   "author": "calvin",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/devswha/oh-my-ssalsyphus.git"
+    "url": "git+https://github.com/devswha/oh-my-claudecode-opencode.git"
   },
   "bugs": {
-    "url": "https://github.com/devswha/oh-my-ssalsyphus/issues"
+    "url": "https://github.com/devswha/oh-my-claudecode-opencode/issues"
   },
-  "homepage": "https://github.com/devswha/oh-my-ssalsyphus#readme",
+  "homepage": "https://github.com/devswha/oh-my-claudecode-opencode#readme",
   "dependencies": {
     "@opencode-ai/plugin": "^1.1.26",
     "@opencode-ai/sdk": "^1.1.26",
