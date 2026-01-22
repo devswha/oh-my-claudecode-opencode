@@ -27269,6 +27269,48 @@ Report any issues found and suggest fixes.`,
     description: "Diagnose and fix oh-my-ssalsyphus installation issues",
     agent: "Ssalsyphus"
   },
+  status: {
+    template: `[STATUS CHECK - AGENT VISIBILITY]
+
+Check and display the current status of all omo-omcs systems.
+
+## Steps
+
+1. **Read State Files** - Check all .omc/*.json files:
+\`\`\`bash
+echo "=== Autopilot State ===" && cat .omc/autopilot-state.json 2>/dev/null || echo "Not active"
+echo ""
+echo "=== Ralph Loop State ===" && cat .omc/ralph-state.json 2>/dev/null || echo "Not active"
+echo ""
+echo "=== Ultrawork State ===" && cat .omc/ultrawork-state.json 2>/dev/null || echo "Not active"
+echo ""
+echo "=== UltraQA State ===" && cat .omc/ultraqa-state.json 2>/dev/null || echo "Not active"
+echo ""
+echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo "Not active"
+\`\`\`
+
+2. **Format Status Report**:
+
+\`\`\`
+\uD83D\uDCCA omo-omcs Status (v0.2.0)
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+\uD83E\uDD16 Autopilot: [active/inactive] (phase: X)
+\uD83D\uDD04 Ralph Loop: [active/inactive] (iteration: X/Y)
+\u26A1 Ultrawork: [active/inactive]
+\uD83E\uDDEA UltraQA: [active/inactive] (cycle: X)
+\uD83D\uDCCB Ralplan: [active/inactive]
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+\uD83D\uDCC1 Background Tasks: X running
+\uD83D\uDCDD Todo Items: X pending, Y in_progress
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+\`\`\`
+
+3. **Show Active Agents** if any mode is active
+
+4. **Warn if Stuck** - If any state shows no progress for >5 minutes, warn user`,
+    description: "Show current status of all omo-omcs modes and agents",
+    agent: "Ssalsyphus"
+  },
   "cancel-ultraqa": {
     template: `Cancel the currently active UltraQA workflow.
 
