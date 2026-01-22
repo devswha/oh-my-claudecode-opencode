@@ -16,6 +16,7 @@
  * - analyst (was: metis) - Pre-planning analysis (Opus)
  * - critic (was: momus) - Plan review (Opus)
  * - vision - Visual/media analysis (Sonnet)
+ * - scientist - Data analysis and research execution (New in v3.3.6)
  */
 export interface AgentDefinition {
     name: string;
@@ -105,6 +106,18 @@ export declare const criticAgent: AgentDefinition;
  * Vision (Sonnet) - Visual/Media Analysis Specialist
  */
 export declare const visionAgent: AgentDefinition;
+/**
+ * Scientist (Sonnet) - Data analysis and research execution
+ */
+export declare const scientistAgent: AgentDefinition;
+/**
+ * Scientist-Low (Haiku) - Quick data inspection
+ */
+export declare const scientistLowAgent: AgentDefinition;
+/**
+ * Scientist-High (Opus) - Complex research and ML analysis
+ */
+export declare const scientistHighAgent: AgentDefinition;
 /**
  * Coordinator (Opus) - Master Orchestrator for complex multi-step tasks
  */

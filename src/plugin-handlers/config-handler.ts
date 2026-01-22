@@ -152,6 +152,22 @@ After the update completes:
 Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
     description: "Update oh-my-ssalsyphus plugin to latest version",
   },
+  "update": {
+    template: `Update oh-my-ssalsyphus plugin to the latest version.
+
+Run this command in your terminal:
+
+\`\`\`bash
+cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+\`\`\`
+
+After the update completes:
+1. Check the version number in the output
+2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
+
+Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
+    description: "Update oh-my-ssalsyphus plugin (alias for /update-ssalsyphus)",
+  },
   "cancel-ralph": {
     template: `Cancel the currently active Ralph Loop.
 
@@ -359,17 +375,20 @@ Just say "stop", "cancel", or "abort" - I'll figure out what to stop based on co
 
 | Command | Description |
 |---------|-------------|
+| /autopilot | Full autonomous execution from idea to code |
 | /ultrawork | Maximum intensity parallel execution |
 | /ralph-loop | Completion guarantee mode |
+| /ultraqa | QA cycling until tests pass |
 | /ralplan | Iterative planning with consensus |
 | /plan | Start planning session |
 | /review | Review plan with Critic |
+| /research | Parallel scientist research |
 | /deepsearch | Thorough codebase search |
 | /analyze | Deep analysis and investigation |
 | /note | Save to notepad memory |
 | /doctor | Diagnose installation issues |
 
-*Version: 0.1.12 (synced with omc 3.0.11)*`,
+*Version: 0.2.0 (synced with omc 3.3.6)*`,
     description: "Show oh-my-ssalsyphus usage guide",
     agent: "Ssalsyphus",
   },
@@ -506,6 +525,87 @@ For each directory:
 
 Target: $ARGUMENTS`,
     description: "Generate hierarchical AGENTS.md documentation across codebase",
+    agent: "Ssalsyphus",
+  },
+  "autopilot": {
+    template: `[AUTOPILOT ACTIVATED - AUTONOMOUS EXECUTION MODE]
+
+You are now in AUTOPILOT mode. Transform this idea into working, tested code through 5 phases:
+
+<user-task>
+$ARGUMENTS
+</user-task>
+
+## Phases
+
+1. **Expansion** - Turn idea into detailed spec (Analyst + Architect agents)
+2. **Planning** - Create implementation plan
+3. **Execution** - Build with parallel executor agents
+4. **QA** - UltraQA cycles until all tests pass
+5. **Validation** - Multi-architect review
+
+## CRITICAL: Delegation Enforcement
+
+**YOU ARE AN ORCHESTRATOR, NOT AN IMPLEMENTER.**
+
+| Action | YOU Do | DELEGATE |
+|--------|--------|----------|
+| Read files | ✓ | |
+| Track progress | ✓ | |
+| Communicate | ✓ | |
+| **ANY code change** | ✗ NEVER | executor agents |
+| **Multi-file refactor** | ✗ NEVER | executor-high |
+| **UI/frontend work** | ✗ NEVER | designer agents |
+
+## Phase Signals
+
+- Signal EXPANSION_COMPLETE when spec is saved
+- Signal PLANNING_COMPLETE when plan is approved
+- Signal EXECUTION_COMPLETE when all code is written
+- Signal QA_COMPLETE when tests pass
+- Signal AUTOPILOT_COMPLETE when validated
+
+## Completion
+
+When all phases complete, output:
+\`<promise>TASK_COMPLETE</promise>\`
+
+Begin with Phase 1: Expansion. Spawn Analyst agent now.`,
+    description: "Full autonomous execution from idea to working code",
+    agent: "Ssalsyphus",
+  },
+  "cancel-autopilot": {
+    template: `[AUTOPILOT CANCELLED]
+
+The Autopilot mode has been cancelled.
+
+Clear the autopilot state:
+\`\`\`bash
+rm -f .omc/autopilot-state.json
+\`\`\`
+
+You are now free to work normally.`,
+    description: "Cancel active autopilot session",
+    agent: "Ssalsyphus",
+  },
+  "research": {
+    template: `[RESEARCH MODE ACTIVATED - PARALLEL SCIENTIST ORCHESTRATION]
+
+Research topic: $ARGUMENTS
+
+## Execution
+
+Spawn multiple scientist agents in parallel to investigate different aspects:
+
+1. **Data Gathering** - Collect relevant data and examples
+2. **Pattern Analysis** - Identify patterns and relationships
+3. **Hypothesis Testing** - Test theories with evidence
+4. **Synthesis** - Combine findings into actionable insights
+
+Use scientist-low for quick lookups, scientist for standard analysis, scientist-high for complex reasoning.
+
+Report findings with evidence and confidence levels.`,
+    description: "Orchestrate parallel scientist agents for comprehensive research",
     agent: "Ssalsyphus",
   },
   "ralph-init": {

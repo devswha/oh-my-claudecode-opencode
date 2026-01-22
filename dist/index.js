@@ -13563,6 +13563,33 @@ var RalphLoopConfigSchema = exports_external.object({
   enabled: exports_external.boolean().optional(),
   default_max_iterations: exports_external.number().min(1).max(1000).optional()
 });
+var AutopilotConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  maxPhaseRetries: exports_external.number().min(1).max(10).optional(),
+  delegationEnforcement: exports_external.enum(["strict", "warn", "off"]).optional()
+});
+var UltraQAConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  maxIterations: exports_external.number().min(1).max(100).optional(),
+  buildCommand: exports_external.string().optional(),
+  testCommand: exports_external.string().optional(),
+  lintCommand: exports_external.string().optional()
+});
+var ScientistConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  replFallback: exports_external.enum(["bash", "disabled"]).optional()
+});
+var OrchestratorConfigSchema = exports_external.object({
+  delegationEnforcement: exports_external.enum(["strict", "warn", "off"]).optional(),
+  auditLogEnabled: exports_external.boolean().optional()
+});
+var ContextRecoveryConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional()
+});
+var EditErrorRecoveryConfigSchema = exports_external.object({
+  enabled: exports_external.boolean().optional(),
+  maxRetries: exports_external.number().min(1).max(10).optional()
+});
 var OmoOmcsConfigSchema = exports_external.object({
   $schema: exports_external.string().optional(),
   agents: exports_external.record(exports_external.string(), AgentConfigSchema).optional(),
@@ -13572,6 +13599,12 @@ var OmoOmcsConfigSchema = exports_external.object({
   disabled_mcps: exports_external.array(exports_external.string()).optional(),
   background_task: BackgroundTaskConfigSchema.optional(),
   ralph_loop: RalphLoopConfigSchema.optional(),
+  autopilot: AutopilotConfigSchema.optional(),
+  ultraqa: UltraQAConfigSchema.optional(),
+  scientist: ScientistConfigSchema.optional(),
+  orchestrator: OrchestratorConfigSchema.optional(),
+  context_recovery: ContextRecoveryConfigSchema.optional(),
+  edit_error_recovery: EditErrorRecoveryConfigSchema.optional(),
   sisyphus_agent: exports_external.object({
     disabled: exports_external.boolean().optional(),
     planner_enabled: exports_external.boolean().optional(),
@@ -13615,6 +13648,19 @@ function loadConfig(directory) {
     ralph_loop: {
       enabled: true,
       default_max_iterations: 100
+    },
+    autopilot: {
+      enabled: true,
+      maxPhaseRetries: 3,
+      delegationEnforcement: "warn"
+    },
+    ultraqa: {
+      enabled: true,
+      maxIterations: 10
+    },
+    orchestrator: {
+      delegationEnforcement: "warn",
+      auditLogEnabled: true
     }
   };
 }
@@ -26809,6 +26855,64 @@ Provide analysis including:
 - Recommendations if applicable
 </Capabilities>`
 };
+var scientistSystemPrompt = `You are Scientist, a data analysis and research execution specialist.
+
+## Your Role
+- Analyze data and extract insights
+- Execute research workflows
+- Test hypotheses with evidence
+- Generate visualizations and reports
+- Apply statistical methods
+
+## Capabilities
+- Data exploration and profiling
+- Statistical analysis (descriptive, inferential)
+- Pattern recognition and anomaly detection
+- Hypothesis testing
+- Report generation with findings
+
+## Guidelines
+1. Start with data exploration to understand structure
+2. Form hypotheses based on observations
+3. Test hypotheses with appropriate methods
+4. Document findings with evidence
+5. Provide actionable insights
+
+## Limitations (OpenCode)
+- No persistent Python REPL available
+- Use bash commands for data processing
+- Write analysis scripts to files when needed
+
+Output clear, evidence-based analysis.`;
+var scientistAgent = {
+  name: "scientist",
+  description: "Data analysis and research execution specialist",
+  model: "sonnet",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: scientistSystemPrompt
+};
+var scientistLowAgent = {
+  name: "scientist-low",
+  description: "Quick data inspection and simple statistics",
+  model: "haiku",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: scientistSystemPrompt
+};
+var scientistHighAgent = {
+  name: "scientist-high",
+  description: "Complex research, hypothesis testing, and ML specialist",
+  model: "opus",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: `${scientistSystemPrompt}
+
+## Advanced Capabilities (Opus Tier)
+- Complex statistical modeling
+- Machine learning pipeline design
+- Multi-variate analysis
+- Research methodology design
+- Cross-validation and robustness testing
+- Publication-quality analysis`
+};
 var coordinatorAgent = {
   name: "coordinator",
   description: "Master orchestrator for complex multi-step tasks. Reads todo lists, delegates to specialist agents, coordinates parallel execution, and ensures ALL tasks complete.",
@@ -26924,8 +27028,56 @@ var agents = {
   metis: analystAgent,
   momus: criticAgent,
   "multimodal-looker": visionAgent,
+  scientist: scientistAgent,
+  "scientist-low": scientistLowAgent,
+  "scientist-high": scientistHighAgent,
   coordinator: coordinatorAgent
 };
+function getAgent(name) {
+  return agents[name];
+}
+function isAlias(name) {
+  const aliases = [
+    "oracle",
+    "oracle-low",
+    "oracle-medium",
+    "librarian",
+    "librarian-low",
+    "frontend-engineer",
+    "frontend-engineer-low",
+    "frontend-engineer-high",
+    "document-writer",
+    "sisyphus-junior",
+    "sisyphus-junior-low",
+    "sisyphus-junior-high",
+    "prometheus",
+    "metis",
+    "momus",
+    "multimodal-looker"
+  ];
+  return aliases.includes(name);
+}
+function getCanonicalName(name) {
+  const aliasMap = {
+    oracle: "architect",
+    "oracle-low": "architect-low",
+    "oracle-medium": "architect-medium",
+    librarian: "researcher",
+    "librarian-low": "researcher-low",
+    "frontend-engineer": "designer",
+    "frontend-engineer-low": "designer-low",
+    "frontend-engineer-high": "designer-high",
+    "document-writer": "writer",
+    "sisyphus-junior": "executor",
+    "sisyphus-junior-low": "executor-low",
+    "sisyphus-junior-high": "executor-high",
+    prometheus: "planner",
+    metis: "analyst",
+    momus: "critic",
+    "multimodal-looker": "vision"
+  };
+  return aliasMap[name] || name;
+}
 
 // src/plugin-handlers/config-handler.ts
 var SLASH_COMMANDS = {
@@ -27044,6 +27196,22 @@ After the update completes:
 
 Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
     description: "Update oh-my-ssalsyphus plugin to latest version"
+  },
+  update: {
+    template: `Update oh-my-ssalsyphus plugin to the latest version.
+
+Run this command in your terminal:
+
+\`\`\`bash
+cd ~/.opencode && npm update oh-my-ssalsyphus && npm list oh-my-ssalsyphus --depth=0
+\`\`\`
+
+After the update completes:
+1. Check the version number in the output
+2. **Restart OpenCode** to load the new version (Ctrl+C and reopen)
+
+Current changelog: https://github.com/devswha/oh-my-ssalsyphus/commits/main`,
+    description: "Update oh-my-ssalsyphus plugin (alias for /update-ssalsyphus)"
   },
   "cancel-ralph": {
     template: `Cancel the currently active Ralph Loop.
@@ -27252,17 +27420,20 @@ Just say "stop", "cancel", or "abort" - I'll figure out what to stop based on co
 
 | Command | Description |
 |---------|-------------|
+| /autopilot | Full autonomous execution from idea to code |
 | /ultrawork | Maximum intensity parallel execution |
 | /ralph-loop | Completion guarantee mode |
+| /ultraqa | QA cycling until tests pass |
 | /ralplan | Iterative planning with consensus |
 | /plan | Start planning session |
 | /review | Review plan with Critic |
+| /research | Parallel scientist research |
 | /deepsearch | Thorough codebase search |
 | /analyze | Deep analysis and investigation |
 | /note | Save to notepad memory |
 | /doctor | Diagnose installation issues |
 
-*Version: 0.1.12 (synced with omc 3.0.11)*`,
+*Version: 0.2.0 (synced with omc 3.3.6)*`,
     description: "Show oh-my-ssalsyphus usage guide",
     agent: "Ssalsyphus"
   },
@@ -27399,6 +27570,87 @@ For each directory:
 
 Target: $ARGUMENTS`,
     description: "Generate hierarchical AGENTS.md documentation across codebase",
+    agent: "Ssalsyphus"
+  },
+  autopilot: {
+    template: `[AUTOPILOT ACTIVATED - AUTONOMOUS EXECUTION MODE]
+
+You are now in AUTOPILOT mode. Transform this idea into working, tested code through 5 phases:
+
+<user-task>
+$ARGUMENTS
+</user-task>
+
+## Phases
+
+1. **Expansion** - Turn idea into detailed spec (Analyst + Architect agents)
+2. **Planning** - Create implementation plan
+3. **Execution** - Build with parallel executor agents
+4. **QA** - UltraQA cycles until all tests pass
+5. **Validation** - Multi-architect review
+
+## CRITICAL: Delegation Enforcement
+
+**YOU ARE AN ORCHESTRATOR, NOT AN IMPLEMENTER.**
+
+| Action | YOU Do | DELEGATE |
+|--------|--------|----------|
+| Read files | \u2713 | |
+| Track progress | \u2713 | |
+| Communicate | \u2713 | |
+| **ANY code change** | \u2717 NEVER | executor agents |
+| **Multi-file refactor** | \u2717 NEVER | executor-high |
+| **UI/frontend work** | \u2717 NEVER | designer agents |
+
+## Phase Signals
+
+- Signal EXPANSION_COMPLETE when spec is saved
+- Signal PLANNING_COMPLETE when plan is approved
+- Signal EXECUTION_COMPLETE when all code is written
+- Signal QA_COMPLETE when tests pass
+- Signal AUTOPILOT_COMPLETE when validated
+
+## Completion
+
+When all phases complete, output:
+\`<promise>TASK_COMPLETE</promise>\`
+
+Begin with Phase 1: Expansion. Spawn Analyst agent now.`,
+    description: "Full autonomous execution from idea to working code",
+    agent: "Ssalsyphus"
+  },
+  "cancel-autopilot": {
+    template: `[AUTOPILOT CANCELLED]
+
+The Autopilot mode has been cancelled.
+
+Clear the autopilot state:
+\`\`\`bash
+rm -f .omc/autopilot-state.json
+\`\`\`
+
+You are now free to work normally.`,
+    description: "Cancel active autopilot session",
+    agent: "Ssalsyphus"
+  },
+  research: {
+    template: `[RESEARCH MODE ACTIVATED - PARALLEL SCIENTIST ORCHESTRATION]
+
+Research topic: $ARGUMENTS
+
+## Execution
+
+Spawn multiple scientist agents in parallel to investigate different aspects:
+
+1. **Data Gathering** - Collect relevant data and examples
+2. **Pattern Analysis** - Identify patterns and relationships
+3. **Hypothesis Testing** - Test theories with evidence
+4. **Synthesis** - Combine findings into actionable insights
+
+Use scientist-low for quick lookups, scientist for standard analysis, scientist-high for complex reasoning.
+
+Report findings with evidence and confidence levels.`,
+    description: "Orchestrate parallel scientist agents for comprehensive research",
     agent: "Ssalsyphus"
   },
   "ralph-init": {
@@ -29466,6 +29718,617 @@ function createSkillInjector(_ctx) {
   };
 }
 
+// src/state/autopilot-state.ts
+import * as fs6 from "fs";
+import * as path7 from "path";
+var STATE_FILENAME3 = "autopilot-state.json";
+function getOmcDir3(projectDir) {
+  return path7.join(projectDir, ".omc");
+}
+function getStatePath3(projectDir) {
+  return path7.join(getOmcDir3(projectDir), STATE_FILENAME3);
+}
+function ensureDir5(dir) {
+  if (!fs6.existsSync(dir)) {
+    fs6.mkdirSync(dir, { recursive: true });
+  }
+}
+function readAutopilotState(projectDir) {
+  const statePath = getStatePath3(projectDir);
+  if (fs6.existsSync(statePath)) {
+    try {
+      const content = fs6.readFileSync(statePath, "utf-8");
+      const state = JSON.parse(content);
+      log(`Read autopilot state from ${statePath}`, {
+        active: state.active,
+        phase: state.phase,
+        sessionId: state.sessionId
+      });
+      return state;
+    } catch (err) {
+      log(`Failed to read autopilot state`, { error: String(err) });
+    }
+  }
+  return null;
+}
+function writeAutopilotState(projectDir, state) {
+  const dir = getOmcDir3(projectDir);
+  ensureDir5(dir);
+  const statePath = getStatePath3(projectDir);
+  try {
+    fs6.writeFileSync(statePath, JSON.stringify(state, null, 2));
+    log(`Wrote autopilot state`, { phase: state.phase, active: state.active, sessionId: state.sessionId });
+  } catch (err) {
+    log(`Failed to write autopilot state`, { error: String(err) });
+  }
+}
+function clearAutopilotState(projectDir) {
+  const statePath = getStatePath3(projectDir);
+  if (fs6.existsSync(statePath)) {
+    try {
+      fs6.unlinkSync(statePath);
+      log(`Cleared autopilot state`);
+    } catch (err) {
+      log(`Failed to clear autopilot state`, { error: String(err) });
+    }
+  }
+}
+function createAutopilotState(sessionId, initialSpec = "") {
+  return {
+    active: true,
+    sessionId,
+    phase: "expansion",
+    spec: initialSpec,
+    plan: "",
+    progress: [],
+    startedAt: new Date().toISOString(),
+    lastActivityAt: new Date().toISOString()
+  };
+}
+function updateAutopilotPhase(projectDir, state, phase) {
+  state.phase = phase;
+  state.lastActivityAt = new Date().toISOString();
+  writeAutopilotState(projectDir, state);
+}
+function markAutopilotComplete(projectDir, state) {
+  state.active = false;
+  state.phase = "complete";
+  state.completedAt = new Date().toISOString();
+  state.lastActivityAt = new Date().toISOString();
+  writeAutopilotState(projectDir, state);
+}
+
+// src/hooks/autopilot.ts
+var AUTOPILOT_TRIGGERS = [
+  /^\/autopilot\s/i,
+  /autopilot:/i,
+  /\bautopilot\b.*:/i
+];
+var PHASE_COMPLETE_SIGNALS = {
+  expansion: [/EXPANSION_COMPLETE/i, /spec.*complete/i],
+  planning: [/PLANNING_COMPLETE/i, /plan.*approved/i],
+  execution: [/EXECUTION_COMPLETE/i, /implementation.*complete/i],
+  qa: [/QA_COMPLETE/i, /all.*tests.*pass/i],
+  validation: [/AUTOPILOT_COMPLETE/i, /validation.*approved/i]
+};
+function createAutopilotHook(ctx, options = {}) {
+  const { config: config3 = {}, onPhaseChange } = options;
+  const { enabled = true, maxPhaseRetries: _maxPhaseRetries = 3 } = config3;
+  const activeSessions = new Map;
+  function detectAutopilotTrigger(text) {
+    for (const pattern of AUTOPILOT_TRIGGERS) {
+      const match = text.match(pattern);
+      if (match) {
+        const afterTrigger = text.slice(match.index + match[0].length).trim();
+        return { triggered: true, task: afterTrigger || undefined };
+      }
+    }
+    return { triggered: false };
+  }
+  function detectPhaseCompletion(text, currentPhase) {
+    const signals = PHASE_COMPLETE_SIGNALS[currentPhase] || [];
+    return signals.some((pattern) => pattern.test(text));
+  }
+  function getNextPhase(current) {
+    const order = ["expansion", "planning", "execution", "qa", "validation", "complete"];
+    const idx = order.indexOf(current);
+    return order[Math.min(idx + 1, order.length - 1)];
+  }
+  function startAutopilot(sessionId, task) {
+    const state = createAutopilotState(sessionId, task);
+    activeSessions.set(sessionId, state);
+    writeAutopilotState(ctx.directory, state);
+    log("[autopilot] Started autopilot session", {
+      sessionId,
+      phase: state.phase,
+      task: task?.substring(0, 100)
+    });
+    if (onPhaseChange) {
+      onPhaseChange(sessionId, state.phase);
+    }
+  }
+  function advancePhase(sessionId) {
+    const state = activeSessions.get(sessionId);
+    if (!state)
+      return;
+    const nextPhase = getNextPhase(state.phase);
+    updateAutopilotPhase(ctx.directory, state, nextPhase);
+    log("[autopilot] Phase advanced", {
+      sessionId,
+      from: state.phase,
+      to: nextPhase
+    });
+    state.phase = nextPhase;
+    if (onPhaseChange) {
+      onPhaseChange(sessionId, nextPhase);
+    }
+    if (nextPhase === "complete") {
+      markAutopilotComplete(ctx.directory, state);
+      activeSessions.delete(sessionId);
+      log("[autopilot] Autopilot completed", { sessionId });
+    }
+  }
+  function cancelAutopilot(sessionId) {
+    activeSessions.delete(sessionId);
+    clearAutopilotState(ctx.directory);
+    log("[autopilot] Autopilot cancelled", { sessionId });
+  }
+  const existingState = readAutopilotState(ctx.directory);
+  if (existingState?.active) {
+    activeSessions.set(existingState.sessionId, existingState);
+    log("[autopilot] Restored active session", {
+      sessionId: existingState.sessionId,
+      phase: existingState.phase
+    });
+  }
+  return {
+    startAutopilot,
+    cancelAutopilot,
+    getState: (sessionId) => activeSessions.get(sessionId),
+    isActive: (sessionId) => activeSessions.has(sessionId),
+    "chat.message": async (input, output) => {
+      if (!enabled)
+        return;
+      const promptText = output.parts?.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(`
+`).trim() || "";
+      const { triggered, task } = detectAutopilotTrigger(promptText);
+      if (triggered && !activeSessions.has(input.sessionID)) {
+        startAutopilot(input.sessionID, task);
+      }
+      if (/cancel.*autopilot|\/cancel-autopilot/i.test(promptText)) {
+        cancelAutopilot(input.sessionID);
+      }
+    },
+    event: async (input) => {
+      if (!enabled)
+        return;
+      const { event } = input;
+      const props = event.properties;
+      if (event.type === "session.idle") {
+        const sessionId = props?.sessionID;
+        if (!sessionId)
+          return;
+        const state = activeSessions.get(sessionId);
+        if (!state || state.phase === "complete")
+          return;
+        const recentOutput = props?.lastOutput;
+        if (recentOutput && detectPhaseCompletion(recentOutput, state.phase)) {
+          advancePhase(sessionId);
+        }
+      }
+    }
+  };
+}
+
+// src/state/ultraqa-state.ts
+import * as fs7 from "fs";
+import * as path8 from "path";
+var STATE_FILENAME4 = "ultraqa-state.json";
+function getStateFilePath(projectDir) {
+  return path8.join(projectDir, ".omc", STATE_FILENAME4);
+}
+function readUltraQAState(projectDir) {
+  const statePath = getStateFilePath(projectDir);
+  if (!fs7.existsSync(statePath)) {
+    return null;
+  }
+  try {
+    const content = fs7.readFileSync(statePath, "utf-8");
+    return JSON.parse(content);
+  } catch (error92) {
+    console.error("Failed to read UltraQA state:", error92);
+    return null;
+  }
+}
+function writeUltraQAState(projectDir, state) {
+  const statePath = getStateFilePath(projectDir);
+  const omcDir = path8.dirname(statePath);
+  if (!fs7.existsSync(omcDir)) {
+    fs7.mkdirSync(omcDir, { recursive: true });
+  }
+  fs7.writeFileSync(statePath, JSON.stringify(state, null, 2), "utf-8");
+}
+function clearUltraQAState(projectDir) {
+  const statePath = getStateFilePath(projectDir);
+  if (fs7.existsSync(statePath)) {
+    fs7.unlinkSync(statePath);
+  }
+}
+function createUltraQAState(sessionId, goal, maxIterations = 10) {
+  const now = new Date().toISOString();
+  return {
+    active: true,
+    sessionId,
+    goal,
+    iteration: 0,
+    maxIterations,
+    issues: [],
+    startedAt: now,
+    lastActivityAt: now
+  };
+}
+function updateUltraQAIteration(projectDir, state, results) {
+  state.iteration += 1;
+  state.lastActivityAt = new Date().toISOString();
+  if (results.build !== undefined) {
+    state.lastBuildResult = results.build;
+  }
+  if (results.lint !== undefined) {
+    state.lastLintResult = results.lint;
+  }
+  if (results.test !== undefined) {
+    state.lastTestResult = results.test;
+  }
+  writeUltraQAState(projectDir, state);
+}
+function markUltraQAComplete(projectDir, state) {
+  state.active = false;
+  state.completedAt = new Date().toISOString();
+  state.lastActivityAt = new Date().toISOString();
+  writeUltraQAState(projectDir, state);
+}
+function isUltraQAPassing(state) {
+  return (state.lastBuildResult === "pass" || state.lastBuildResult === undefined) && (state.lastLintResult === "pass" || state.lastLintResult === undefined) && (state.lastTestResult === "pass" || state.lastTestResult === undefined);
+}
+
+// src/hooks/ultraqa-loop.ts
+var ULTRAQA_TRIGGERS = [
+  /^\/ultraqa\s/i,
+  /ultraqa:/i
+];
+function createUltraQALoopHook(ctx, options = {}) {
+  const { config: config3 = {}, onCycleComplete } = options;
+  const {
+    enabled = true,
+    maxIterations = 10,
+    buildCommand = "bun run build",
+    testCommand = "bun test",
+    lintCommand = "bun run lint"
+  } = config3;
+  const activeSessions = new Map;
+  function detectUltraQATrigger(text) {
+    for (const pattern of ULTRAQA_TRIGGERS) {
+      const match = text.match(pattern);
+      if (match) {
+        const afterTrigger = text.slice(match.index + match[0].length).trim();
+        return { triggered: true, goal: afterTrigger || undefined };
+      }
+    }
+    return { triggered: false };
+  }
+  function startUltraQA(sessionId, goal) {
+    const state = createUltraQAState(sessionId, goal, maxIterations);
+    activeSessions.set(sessionId, state);
+    writeUltraQAState(ctx.directory, state);
+    log("[ultraqa] Started UltraQA session", {
+      sessionId,
+      goal: goal.substring(0, 100),
+      maxIterations
+    });
+  }
+  function updateCycle(sessionId, results) {
+    const state = activeSessions.get(sessionId);
+    if (!state)
+      return;
+    updateUltraQAIteration(ctx.directory, state, results);
+    log("[ultraqa] Cycle updated", {
+      sessionId,
+      iteration: state.iteration,
+      results
+    });
+    if (isUltraQAPassing(state)) {
+      completeUltraQA(sessionId, "success");
+    } else if (state.iteration >= state.maxIterations) {
+      completeUltraQA(sessionId, "max_iterations");
+    }
+    if (onCycleComplete) {
+      onCycleComplete(sessionId, state);
+    }
+  }
+  function completeUltraQA(sessionId, reason) {
+    const state = activeSessions.get(sessionId);
+    if (state) {
+      markUltraQAComplete(ctx.directory, state);
+      activeSessions.delete(sessionId);
+      log("[ultraqa] UltraQA completed", {
+        sessionId,
+        reason,
+        iterations: state.iteration,
+        passing: isUltraQAPassing(state)
+      });
+    }
+  }
+  function cancelUltraQA(sessionId) {
+    completeUltraQA(sessionId, "cancelled");
+    clearUltraQAState(ctx.directory);
+  }
+  function getQAPrompt(state) {
+    const commands = [
+      `Build: \`${buildCommand}\``,
+      `Lint: \`${lintCommand}\``,
+      `Test: \`${testCommand}\``
+    ].join(`
+`);
+    return `[ULTRAQA LOOP - Iteration ${state.iteration + 1}/${state.maxIterations}]
+
+Goal: ${state.goal}
+
+Run these checks in order:
+${commands}
+
+For each failing check:
+1. Analyze the error
+2. Fix the issue
+3. Re-run the check
+
+Continue until ALL checks pass or report what's blocking progress.
+
+Current status:
+- Build: ${state.lastBuildResult || "not run"}
+- Lint: ${state.lastLintResult || "not run"}
+- Test: ${state.lastTestResult || "not run"}
+
+When ALL pass, output: QA_COMPLETE`;
+  }
+  const existingState = readUltraQAState(ctx.directory);
+  if (existingState?.active) {
+    activeSessions.set(existingState.sessionId, existingState);
+    log("[ultraqa] Restored active session", {
+      sessionId: existingState.sessionId,
+      iteration: existingState.iteration
+    });
+  }
+  return {
+    startUltraQA,
+    cancelUltraQA,
+    updateCycle,
+    getState: (sessionId) => activeSessions.get(sessionId),
+    isActive: (sessionId) => activeSessions.has(sessionId),
+    getQAPrompt,
+    "chat.message": async (input, output) => {
+      if (!enabled)
+        return;
+      const promptText = output.parts?.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(`
+`).trim() || "";
+      const { triggered, goal } = detectUltraQATrigger(promptText);
+      if (triggered && !activeSessions.has(input.sessionID)) {
+        startUltraQA(input.sessionID, goal || "Pass all QA checks");
+      }
+      if (/cancel.*ultraqa|\/cancel-ultraqa/i.test(promptText)) {
+        cancelUltraQA(input.sessionID);
+      }
+    },
+    event: async (input) => {
+      if (!enabled)
+        return;
+      const { event } = input;
+      const props = event.properties;
+      if (event.type === "session.idle") {
+        const sessionId = props?.sessionID;
+        if (!sessionId)
+          return;
+        const state = activeSessions.get(sessionId);
+        if (!state || !state.active)
+          return;
+        const lastOutput = props?.lastOutput;
+        if (lastOutput && /QA_COMPLETE/i.test(lastOutput)) {
+          completeUltraQA(sessionId, "success");
+        }
+      }
+    }
+  };
+}
+
+// src/hooks/context-recovery.ts
+var CONTEXT_LIMIT_PATTERNS = [
+  /context.*window.*limit/i,
+  /token.*limit.*exceeded/i,
+  /maximum.*context.*length/i,
+  /context.*too.*long/i,
+  /prompt.*too.*large/i
+];
+function createContextRecoveryHook(_ctx, options = {}) {
+  const { enabled = true } = options;
+  return {
+    "tool.execute.after": async (input, output) => {
+      if (!enabled)
+        return;
+      const errorStr = output.output || "";
+      const isContextLimitError = CONTEXT_LIMIT_PATTERNS.some((pattern) => pattern.test(errorStr));
+      if (isContextLimitError) {
+        log("[context-recovery] Context limit error detected", {
+          sessionID: input.sessionID,
+          tool: input.tool
+        });
+        log("[context-recovery] Suggested action: Summarize context or split task");
+      }
+    }
+  };
+}
+
+// src/hooks/edit-error-recovery.ts
+var EDIT_ERROR_PATTERNS = [
+  /old_string.*not.*found/i,
+  /no.*match.*found/i,
+  /file.*not.*found/i,
+  /permission.*denied/i,
+  /cannot.*edit/i,
+  /edit.*failed/i
+];
+var sessionErrors = new Map;
+function createEditErrorRecoveryHook(_ctx, options = {}) {
+  const { enabled = true, maxRetries = 3 } = options;
+  function getErrorState(sessionId) {
+    if (!sessionErrors.has(sessionId)) {
+      sessionErrors.set(sessionId, { consecutiveErrors: 0 });
+    }
+    return sessionErrors.get(sessionId);
+  }
+  function clearErrorState(sessionId) {
+    sessionErrors.delete(sessionId);
+  }
+  return {
+    "tool.execute.after": async (input, output) => {
+      if (!enabled)
+        return;
+      if (input.tool !== "Edit" && input.tool !== "edit")
+        return;
+      const errorStr = output.output || "";
+      const isEditError = EDIT_ERROR_PATTERNS.some((pattern) => pattern.test(errorStr));
+      const state = getErrorState(input.sessionID);
+      if (isEditError) {
+        state.consecutiveErrors++;
+        state.lastErrorFile = output.metadata?.file_path;
+        if (/old_string.*not.*found/i.test(errorStr)) {
+          state.lastErrorType = "string_not_found";
+        } else if (/file.*not.*found/i.test(errorStr)) {
+          state.lastErrorType = "file_not_found";
+        } else if (/permission/i.test(errorStr)) {
+          state.lastErrorType = "permission_denied";
+        } else {
+          state.lastErrorType = "unknown";
+        }
+        log("[edit-error-recovery] Edit error detected", {
+          sessionID: input.sessionID,
+          consecutiveErrors: state.consecutiveErrors,
+          errorType: state.lastErrorType,
+          file: state.lastErrorFile
+        });
+        if (state.consecutiveErrors >= maxRetries) {
+          log("[edit-error-recovery] Max retries reached, suggesting alternative approach", {
+            sessionID: input.sessionID
+          });
+        }
+      } else {
+        if (state.consecutiveErrors > 0) {
+          log("[edit-error-recovery] Edit succeeded after errors, clearing state", {
+            sessionID: input.sessionID
+          });
+          clearErrorState(input.sessionID);
+        }
+      }
+    }
+  };
+}
+
+// src/hooks/omc-orchestrator.ts
+import * as fs8 from "fs";
+import * as path9 from "path";
+var TOOL_RESTRICTIONS = {
+  architect: ["Write", "Edit"],
+  "architect-low": ["Write", "Edit"],
+  "architect-medium": ["Write", "Edit"],
+  planner: ["Write", "Edit"],
+  analyst: ["Write", "Edit"],
+  critic: ["Write", "Edit"],
+  vision: ["Write", "Edit"],
+  explore: ["Write", "Edit"],
+  "explore-medium": ["Write", "Edit"],
+  researcher: ["Write", "Edit"],
+  "researcher-low": ["Write", "Edit"]
+};
+function getAuditLogPath(projectDir) {
+  return path9.join(projectDir, ".omc", "logs", "delegation-audit.jsonl");
+}
+function ensureLogDir(projectDir) {
+  const logDir = path9.join(projectDir, ".omc", "logs");
+  if (!fs8.existsSync(logDir)) {
+    fs8.mkdirSync(logDir, { recursive: true });
+  }
+}
+function writeAuditEntry(projectDir, entry) {
+  ensureLogDir(projectDir);
+  const logPath = getAuditLogPath(projectDir);
+  fs8.appendFileSync(logPath, JSON.stringify(entry) + `
+`);
+}
+function createOmcOrchestratorHook(ctx, options = {}) {
+  const {
+    delegationEnforcement = "warn",
+    auditLogEnabled = true
+  } = options;
+  return {
+    "tool.execute.before": async (input, output) => {
+      if (input.tool !== "task" && input.tool !== "Task")
+        return;
+      const args = output.args;
+      const agentType = args.subagent_type;
+      const prompt = args.prompt;
+      const tools = args.tools;
+      if (!agentType)
+        return;
+      const canonicalName = isAlias(agentType) ? getCanonicalName(agentType) : agentType;
+      const agent = getAgent(canonicalName);
+      if (!agent) {
+        log("[omc-orchestrator] Unknown agent requested", {
+          agentRequested: agentType,
+          sessionID: input.sessionID
+        });
+        return;
+      }
+      const restrictedTools = TOOL_RESTRICTIONS[canonicalName] || [];
+      const blockedTools = [];
+      if (tools && restrictedTools.length > 0) {
+        for (const restrictedTool of restrictedTools) {
+          if (tools[restrictedTool] === true || tools[restrictedTool.toLowerCase()] === true) {
+            blockedTools.push(restrictedTool);
+            if (delegationEnforcement === "strict") {
+              tools[restrictedTool] = false;
+              tools[restrictedTool.toLowerCase()] = false;
+            }
+          }
+        }
+      }
+      if (blockedTools.length > 0) {
+        const action = delegationEnforcement === "strict" ? "BLOCKED" : "WARNED";
+        log(`[omc-orchestrator] Tool restriction ${action}`, {
+          agent: canonicalName,
+          blockedTools,
+          enforcement: delegationEnforcement,
+          sessionID: input.sessionID
+        });
+      }
+      if (auditLogEnabled) {
+        const entry = {
+          timestamp: new Date().toISOString(),
+          sessionId: input.sessionID,
+          agentRequested: agentType,
+          agentResolved: canonicalName,
+          taskDescription: (prompt || "").substring(0, 200),
+          toolsRequested: tools ? Object.keys(tools).filter((k) => tools[k]) : undefined,
+          blocked: delegationEnforcement === "strict" && blockedTools.length > 0,
+          reason: blockedTools.length > 0 ? `Tools restricted for ${canonicalName}: ${blockedTools.join(", ")}` : undefined
+        };
+        try {
+          writeAuditEntry(ctx.directory, entry);
+        } catch (err) {
+          log("[omc-orchestrator] Failed to write audit log", { error: String(err) });
+        }
+      }
+    }
+  };
+}
+
 // src/index.ts
 var OmoOmcsPlugin = async (ctx) => {
   const pluginConfig = loadConfig(ctx.directory);
@@ -29489,6 +30352,26 @@ var OmoOmcsPlugin = async (ctx) => {
     injectNotepadContext: true
   });
   const rememberTagProcessor = createRememberTagProcessor(ctx);
+  const autopilot = createAutopilotHook(ctx, {
+    config: pluginConfig.autopilot,
+    onPhaseChange: (sessionID, phase) => {
+      log("[autopilot] Phase changed", { sessionID, phase });
+    }
+  });
+  const ultraqaLoop = createUltraQALoopHook(ctx, {
+    config: pluginConfig.ultraqa
+  });
+  const contextRecovery = createContextRecoveryHook(ctx, {
+    enabled: pluginConfig.context_recovery?.enabled ?? true
+  });
+  const editErrorRecovery = createEditErrorRecoveryHook(ctx, {
+    enabled: pluginConfig.edit_error_recovery?.enabled ?? true,
+    maxRetries: pluginConfig.edit_error_recovery?.maxRetries
+  });
+  const omcOrchestrator = createOmcOrchestratorHook(ctx, {
+    delegationEnforcement: pluginConfig.orchestrator?.delegationEnforcement ?? "warn",
+    auditLogEnabled: pluginConfig.orchestrator?.auditLogEnabled ?? true
+  });
   const configHandler = createConfigHandler({
     ctx,
     pluginConfig
@@ -29499,6 +30382,8 @@ var OmoOmcsPlugin = async (ctx) => {
       const { event } = input;
       const props = event.properties;
       await ralphLoop.event(input);
+      await autopilot.event(input);
+      await ultraqaLoop.event(input);
       if (event.type === "session.idle") {
         const sessionID = props?.sessionID;
         if (sessionID) {
@@ -29542,6 +30427,8 @@ var OmoOmcsPlugin = async (ctx) => {
       } else {
         systemPromptInjector.clearSkillInjection(input.sessionID);
       }
+      await autopilot["chat.message"](input, output);
+      await ultraqaLoop["chat.message"](input, output);
     },
     "experimental.chat.system.transform": systemPromptInjector["experimental.chat.system.transform"],
     "tool.execute.before": async (input, output) => {
@@ -29552,8 +30439,13 @@ var OmoOmcsPlugin = async (ctx) => {
           log("Blocked delegate_task in task tool");
         }
       }
+      await omcOrchestrator["tool.execute.before"](input, output);
     },
-    "tool.execute.after": rememberTagProcessor["tool.execute.after"],
+    "tool.execute.after": async (input, output) => {
+      await rememberTagProcessor["tool.execute.after"](input, output);
+      await contextRecovery["tool.execute.after"](input, output);
+      await editErrorRecovery["tool.execute.after"](input, output);
+    },
     tool: {
       ...backgroundTools,
       call_omo_agent: callOmoAgent

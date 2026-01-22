@@ -1,7 +1,7 @@
 {
   "name": "oh-my-ssalsyphus",
-  "version": "0.1.11",
-  "description": "OpenCode port of oh-my-claude-sisyphus - Multi-agent orchestration plugin",
+  "version": "0.2.0",
+  "description": "OpenCode port of oh-my-claudecode v3.3.6 - Multi-agent orchestration plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",

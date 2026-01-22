@@ -135,9 +135,12 @@ The \`<promise>TASK_COMPLETE</promise>\` tag binds you to completion.` }],
       systemOutput
     );
 
-    expect(systemOutput.system.length).toBe(1);
-    expect(systemOutput.system[0]).toContain("RALPH LOOP");
-    expect(systemOutput.system[0]).toContain("<promise>TASK_COMPLETE</promise>");
+    // At least one system prompt should be injected for ralph-loop mode
+    expect(systemOutput.system.length).toBeGreaterThanOrEqual(1);
+    // Find the ralph-loop specific prompt
+    const ralphPrompt = systemOutput.system.find(s => s.includes("RALPH LOOP"));
+    expect(ralphPrompt).toBeDefined();
+    expect(ralphPrompt).toContain("<promise>TASK_COMPLETE</promise>");
   });
 
   it("should handle full ultrawork-ralph mode flow", async () => {
@@ -182,9 +185,12 @@ Begin working NOW. PARALLEL EVERYTHING. The loop will not release you until you 
       systemOutput
     );
 
-    expect(systemOutput.system.length).toBe(1);
-    expect(systemOutput.system[0]).toContain("ULTRAWORK-RALPH");
-    expect(systemOutput.system[0]).toContain("<promise>TASK_COMPLETE</promise>");
+    // At least one system prompt should be injected for ultrawork-ralph mode
+    expect(systemOutput.system.length).toBeGreaterThanOrEqual(1);
+    // Find the ultrawork-ralph specific prompt
+    const ultraworkRalphPrompt = systemOutput.system.find(s => s.includes("ULTRAWORK-RALPH"));
+    expect(ultraworkRalphPrompt).toBeDefined();
+    expect(ultraworkRalphPrompt).toContain("<promise>TASK_COMPLETE</promise>");
   });
 
   it("should handle session lifecycle events", async () => {
@@ -221,7 +227,8 @@ The \`<promise>TASK_COMPLETE</promise>\` tag binds you to completion.` }],
       { sessionID: sessionId },
       systemOutput1
     );
-    expect(systemOutput1.system.length).toBe(1);
+    // At least one system prompt should be injected when mode is active
+    expect(systemOutput1.system.length).toBeGreaterThanOrEqual(1);
 
     // Simulate session deleted - should clear mode
     await plugin.event!({
@@ -231,13 +238,15 @@ The \`<promise>TASK_COMPLETE</promise>\` tag binds you to completion.` }],
       },
     });
 
-    // Verify mode is cleared
+    // Verify ralph-loop mode is cleared (no ralph-loop specific prompts)
     const systemOutput2 = { system: [] as string[] };
     await plugin["experimental.chat.system.transform"]!(
       { sessionID: sessionId },
       systemOutput2
     );
-    expect(systemOutput2.system.length).toBe(0);
+    // After session deleted, the ralph-loop specific prompt should be gone
+    const hasRalphPrompt = systemOutput2.system.some(s => s.includes("RALPH LOOP"));
+    expect(hasRalphPrompt).toBe(false);
   });
 
   it("should block delegate_task in task tool", async () => {

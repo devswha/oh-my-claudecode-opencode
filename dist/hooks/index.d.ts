@@ -17,3 +17,6 @@ export { createPersistentModeHook, checkPersistentModes, resetTodoContinuationAt
 export type { PersistentModeResult, PersistentModeOptions, } from "./persistent-mode";
 export { createRememberTagProcessor, extractRememberTags, formatRememberTag, } from "./remember-tag-processor";
 export type { RememberTagProcessorOptions } from "./remember-tag-processor";
+export { createContextRecoveryHook, type ContextRecoveryOptions } from "./context-recovery";
+export { createEditErrorRecoveryHook, type EditErrorRecoveryOptions } from "./edit-error-recovery";
+export { createOmcOrchestratorHook, type OmcOrchestratorOptions } from "./omc-orchestrator";

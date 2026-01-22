@@ -21,6 +21,39 @@ const RalphLoopConfigSchema = z.object({
   default_max_iterations: z.number().min(1).max(1000).optional(),
 });
 
+const AutopilotConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  maxPhaseRetries: z.number().min(1).max(10).optional(),
+  delegationEnforcement: z.enum(['strict', 'warn', 'off']).optional(),
+});
+
+const UltraQAConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  maxIterations: z.number().min(1).max(100).optional(),
+  buildCommand: z.string().optional(),
+  testCommand: z.string().optional(),
+  lintCommand: z.string().optional(),
+});
+
+const ScientistConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  replFallback: z.enum(['bash', 'disabled']).optional(),
+});
+
+const OrchestratorConfigSchema = z.object({
+  delegationEnforcement: z.enum(['strict', 'warn', 'off']).optional(),
+  auditLogEnabled: z.boolean().optional(),
+});
+
+const ContextRecoveryConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+});
+
+const EditErrorRecoveryConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  maxRetries: z.number().min(1).max(10).optional(),
+});
+
 const OmoOmcsConfigSchema = z.object({
   $schema: z.string().optional(),
   agents: z.record(z.string(), AgentConfigSchema).optional(),
@@ -30,6 +63,12 @@ const OmoOmcsConfigSchema = z.object({
   disabled_mcps: z.array(z.string()).optional(),
   background_task: BackgroundTaskConfigSchema.optional(),
   ralph_loop: RalphLoopConfigSchema.optional(),
+  autopilot: AutopilotConfigSchema.optional(),
+  ultraqa: UltraQAConfigSchema.optional(),
+  scientist: ScientistConfigSchema.optional(),
+  orchestrator: OrchestratorConfigSchema.optional(),
+  context_recovery: ContextRecoveryConfigSchema.optional(),
+  edit_error_recovery: EditErrorRecoveryConfigSchema.optional(),
   sisyphus_agent: z.object({
     disabled: z.boolean().optional(),
     planner_enabled: z.boolean().optional(),
@@ -41,6 +80,12 @@ export type OmoOmcsConfig = z.infer<typeof OmoOmcsConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type BackgroundTaskConfig = z.infer<typeof BackgroundTaskConfigSchema>;
 export type RalphLoopConfig = z.infer<typeof RalphLoopConfigSchema>;
+export type AutopilotConfig = z.infer<typeof AutopilotConfigSchema>;
+export type UltraQAConfig = z.infer<typeof UltraQAConfigSchema>;
+export type ScientistConfig = z.infer<typeof ScientistConfigSchema>;
+export type OrchestratorConfig = z.infer<typeof OrchestratorConfigSchema>;
+export type ContextRecoveryConfig = z.infer<typeof ContextRecoveryConfigSchema>;
+export type EditErrorRecoveryConfig = z.infer<typeof EditErrorRecoveryConfigSchema>;
 
 export type HookName =
   | "todo-continuation-enforcer"
@@ -53,7 +98,12 @@ export type HookName =
   | "tool-output-truncator"
   | "system-prompt-injector"
   | "persistent-mode"
-  | "remember-tag-processor";
+  | "remember-tag-processor"
+  | "autopilot"
+  | "ultraqa-loop"
+  | "context-recovery"
+  | "edit-error-recovery"
+  | "omc-orchestrator";
 
 export type AgentName =
   | "oracle"
@@ -105,6 +155,19 @@ export function loadConfig(directory: string): OmoOmcsConfig {
     ralph_loop: {
       enabled: true,
       default_max_iterations: 100,
+    },
+    autopilot: {
+      enabled: true,
+      maxPhaseRetries: 3,
+      delegationEnforcement: 'warn',
+    },
+    ultraqa: {
+      enabled: true,
+      maxIterations: 10,
+    },
+    orchestrator: {
+      delegationEnforcement: 'warn',
+      auditLogEnabled: true,
     },
   };
 }

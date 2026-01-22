@@ -59,3 +59,8 @@ export {
   formatRememberTag,
 } from "./remember-tag-processor";
 export type { RememberTagProcessorOptions } from "./remember-tag-processor";
+
+// New Hooks
+export { createContextRecoveryHook, type ContextRecoveryOptions } from "./context-recovery";
+export { createEditErrorRecoveryHook, type EditErrorRecoveryOptions } from "./edit-error-recovery";
+export { createOmcOrchestratorHook, type OmcOrchestratorOptions } from "./omc-orchestrator";

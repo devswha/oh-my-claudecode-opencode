@@ -16,6 +16,7 @@
  * - analyst (was: metis) - Pre-planning analysis (Opus)
  * - critic (was: momus) - Plan review (Opus)
  * - vision - Visual/media analysis (Sonnet)
+ * - scientist - Data analysis and research execution (New in v3.3.6)
  */
 
 export interface AgentDefinition {
@@ -743,6 +744,81 @@ Provide analysis including:
 };
 
 // =============================================================================
+// SCIENTIST AGENTS (New in v3.3.6)
+// =============================================================================
+
+const scientistSystemPrompt = `You are Scientist, a data analysis and research execution specialist.
+
+## Your Role
+- Analyze data and extract insights
+- Execute research workflows
+- Test hypotheses with evidence
+- Generate visualizations and reports
+- Apply statistical methods
+
+## Capabilities
+- Data exploration and profiling
+- Statistical analysis (descriptive, inferential)
+- Pattern recognition and anomaly detection
+- Hypothesis testing
+- Report generation with findings
+
+## Guidelines
+1. Start with data exploration to understand structure
+2. Form hypotheses based on observations
+3. Test hypotheses with appropriate methods
+4. Document findings with evidence
+5. Provide actionable insights
+
+## Limitations (OpenCode)
+- No persistent Python REPL available
+- Use bash commands for data processing
+- Write analysis scripts to files when needed
+
+Output clear, evidence-based analysis.`;
+
+/**
+ * Scientist (Sonnet) - Data analysis and research execution
+ */
+export const scientistAgent: AgentDefinition = {
+  name: "scientist",
+  description: "Data analysis and research execution specialist",
+  model: "sonnet",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: scientistSystemPrompt,
+};
+
+/**
+ * Scientist-Low (Haiku) - Quick data inspection
+ */
+export const scientistLowAgent: AgentDefinition = {
+  name: "scientist-low",
+  description: "Quick data inspection and simple statistics",
+  model: "haiku",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: scientistSystemPrompt,
+};
+
+/**
+ * Scientist-High (Opus) - Complex research and ML analysis
+ */
+export const scientistHighAgent: AgentDefinition = {
+  name: "scientist-high",
+  description: "Complex research, hypothesis testing, and ML specialist",
+  model: "opus",
+  tools: ["Read", "Grep", "Glob", "Bash"],
+  systemPrompt: `${scientistSystemPrompt}
+
+## Advanced Capabilities (Opus Tier)
+- Complex statistical modeling
+- Machine learning pipeline design
+- Multi-variate analysis
+- Research methodology design
+- Cross-validation and robustness testing
+- Publication-quality analysis`,
+};
+
+// =============================================================================
 // COORDINATOR AGENT (Master Orchestrator)
 // =============================================================================
 
@@ -892,6 +968,11 @@ export const agents: Record<string, AgentDefinition> = {
   momus: criticAgent,
   "multimodal-looker": visionAgent,
 
+  // === SCIENTIST (New in v3.3.6) ===
+  scientist: scientistAgent,
+  "scientist-low": scientistLowAgent,
+  "scientist-high": scientistHighAgent,
+
   // === COORDINATOR ===
   coordinator: coordinatorAgent,
 };
@@ -924,6 +1005,9 @@ export function listAgents(): AgentDefinition[] {
     "analyst",
     "critic",
     "vision",
+    "scientist",
+    "scientist-low",
+    "scientist-high",
     "coordinator",
   ];
   for (const name of primaryNames) {

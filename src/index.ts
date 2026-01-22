@@ -9,6 +9,11 @@ import { createPersistentModeHook, checkPersistentModes } from "./hooks/persiste
 import { createSystemPromptInjector, type ActiveMode } from "./hooks/system-prompt-injector";
 import { createRememberTagProcessor } from "./hooks/remember-tag-processor";
 import { createSkillInjector } from "./hooks/skill-injector";
+import { createAutopilotHook } from "./hooks/autopilot";
+import { createUltraQALoopHook } from "./hooks/ultraqa-loop";
+import { createContextRecoveryHook } from "./hooks/context-recovery";
+import { createEditErrorRecoveryHook } from "./hooks/edit-error-recovery";
+import { createOmcOrchestratorHook } from "./hooks/omc-orchestrator";
 import { log } from "./shared/logger";
 
 const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
@@ -45,6 +50,32 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
   // Create remember tag processor for tool.execute.after
   const rememberTagProcessor = createRememberTagProcessor(ctx);
 
+  // Create new v0.2.0 hooks
+  const autopilot = createAutopilotHook(ctx, {
+    config: pluginConfig.autopilot,
+    onPhaseChange: (sessionID: string, phase) => {
+      log("[autopilot] Phase changed", { sessionID, phase });
+    },
+  });
+
+  const ultraqaLoop = createUltraQALoopHook(ctx, {
+    config: pluginConfig.ultraqa,
+  });
+
+  const contextRecovery = createContextRecoveryHook(ctx, {
+    enabled: pluginConfig.context_recovery?.enabled ?? true,
+  });
+
+  const editErrorRecovery = createEditErrorRecoveryHook(ctx, {
+    enabled: pluginConfig.edit_error_recovery?.enabled ?? true,
+    maxRetries: pluginConfig.edit_error_recovery?.maxRetries,
+  });
+
+  const omcOrchestrator = createOmcOrchestratorHook(ctx, {
+    delegationEnforcement: pluginConfig.orchestrator?.delegationEnforcement ?? 'warn',
+    auditLogEnabled: pluginConfig.orchestrator?.auditLogEnabled ?? true,
+  });
+
   // Create config handler for agent/command registration
   const configHandler = createConfigHandler({
     ctx,
@@ -59,6 +90,12 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
 
       // Handle ralph loop events
       await ralphLoop.event(input);
+
+      // Handle autopilot events
+      await autopilot.event(input);
+
+      // Handle ultraqa events
+      await ultraqaLoop.event(input);
 
       // Handle session.idle for persistent mode continuation
       if (event.type === "session.idle") {
@@ -122,6 +159,12 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
         // Clear skill injection when no context detected (prevents persistence bug)
         systemPromptInjector.clearSkillInjection(input.sessionID);
       }
+
+      // Handle autopilot chat messages
+      await autopilot["chat.message"](input, output);
+
+      // Handle ultraqa chat messages
+      await ultraqaLoop["chat.message"](input, output);
     },
     "experimental.chat.system.transform": systemPromptInjector["experimental.chat.system.transform"],
     "tool.execute.before": async (
@@ -136,8 +179,23 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
           log("Blocked delegate_task in task tool");
         }
       }
+
+      // Run orchestrator validation
+      await omcOrchestrator["tool.execute.before"](input, output);
     },
-    "tool.execute.after": rememberTagProcessor["tool.execute.after"],
+    "tool.execute.after": async (
+      input: { tool: string; sessionID: string; callID: string },
+      output: { title: string; output: string; metadata: any }
+    ): Promise<void> => {
+      // Process remember tags
+      await rememberTagProcessor["tool.execute.after"](input, output);
+
+      // Context recovery
+      await contextRecovery["tool.execute.after"](input, output);
+
+      // Edit error recovery
+      await editErrorRecovery["tool.execute.after"](input, output);
+    },
     tool: {
       ...backgroundTools,
       call_omo_agent: callOmoAgent,
