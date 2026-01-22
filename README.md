@@ -1,8 +1,8 @@
-# oh-my-ssalsyphus
+# oh-my-claudecode-opencode (omco)
 
-> 🔄 **OpenCode port of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) v3.0.11**
+> 🔄 **OpenCode port of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) v3.3.6**
 
-**Oh My Ssal Sisyphus** - Multi-agent orchestration plugin that brings [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) features to [OpenCode](https://github.com/opencode-ai/opencode).
+**oh-my-claudecode-opencode** (omco) - Multi-agent orchestration plugin that brings [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) features to [OpenCode](https://github.com/opencode-ai/opencode).
 
 Like Sisyphus condemned to roll his boulder eternally, this plugin ensures your AI assistant **never stops until the task is complete**.
 
@@ -10,11 +10,11 @@ Like Sisyphus condemned to roll his boulder eternally, this plugin ensures your 
 
 ## 🎯 What is this?
 
-This project **ports the powerful features** of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) v3.0.11 (a Claude Code plugin) to the **OpenCode platform**.
+This project **ports the powerful features** of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) v3.3.6 (a Claude Code plugin) to the **OpenCode platform**.
 
 | Original (Claude Code) | This Port (OpenCode) |
 |------------------------|----------------------|
-| [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | **oh-my-ssalsyphus** |
+| [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | **oh-my-claudecode-opencode** (omco) |
 | Shell hooks + Node.js bridge | Native TypeScript plugin API |
 | Stop hook (proactive blocking) | session.idle event (reactive) |
 
@@ -69,20 +69,20 @@ This project **ports the powerful features** of [oh-my-claudecode](https://githu
 
 ```bash
 # Using npm
-npm install omo-omcs
+npm install oh-my-claudecode-opencode
 
 # Using bun
-bun add omo-omcs
+bun add oh-my-claudecode-opencode
 
 # Using pnpm
-pnpm add omo-omcs
+pnpm add oh-my-claudecode-opencode
 ```
 
 Then add to your OpenCode configuration:
 
 ```json
 {
-  "plugins": ["omo-omcs"]
+  "plugins": ["oh-my-claudecode-opencode"]
 }
 ```
 
@@ -171,26 +171,40 @@ call_omo_agent(
 
 ## Configuration
 
-Create `.opencode/omo-omcs.json` in your project:
+Create `.opencode/omco.json` in your project (see `assets/omco.example.json` for full example):
 
 ```json
 {
-  "disabled_hooks": [],
+  "$schema": "node_modules/oh-my-claudecode-opencode/assets/omco.schema.json",
+
+  "agents": {
+    "architect": { "tier": "opus", "enabled": true },
+    "explore": { "tier": "haiku" }
+  },
+
   "background_task": {
-    "max_concurrent": 5,
-    "timeout_ms": 300000
+    "defaultConcurrency": 5
   },
+
   "ralph_loop": {
-    "max_iterations": 50,
-    "idle_timeout_ms": 30000
+    "enabled": true,
+    "default_max_iterations": 100
   },
-  "todo_continuation": {
-    "idle_threshold_ms": 15000,
-    "reminder_interval_ms": 60000
+
+  "autopilot": {
+    "enabled": true,
+    "maxPhaseRetries": 3,
+    "delegationEnforcement": "warn"
   },
-  "ultrawork": {
-    "keywords": ["ultrawork", "ulw", "uw"],
-    "auto_parallel": true
+
+  "ultraqa": {
+    "enabled": true,
+    "maxIterations": 10
+  },
+
+  "orchestrator": {
+    "delegationEnforcement": "warn",
+    "auditLogEnabled": true
   }
 }
 ```
@@ -199,13 +213,126 @@ Create `.opencode/omo-omcs.json` in your project:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `disabled_hooks` | Hooks to disable | `[]` |
-| `background_task.max_concurrent` | Max parallel background tasks | `5` |
-| `background_task.timeout_ms` | Background task timeout | `300000` |
-| `ralph_loop.max_iterations` | Max loop iterations | `50` |
-| `ralph_loop.idle_timeout_ms` | Idle time before continuation | `30000` |
-| `todo_continuation.idle_threshold_ms` | Idle threshold for TODO check | `15000` |
-| `ultrawork.keywords` | Trigger keywords | `["ultrawork", "ulw", "uw"]` |
+| `background_task.defaultConcurrency` | Max parallel background tasks | `5` |
+| `ralph_loop.enabled` | Enable Ralph Loop | `true` |
+| `ralph_loop.default_max_iterations` | Max loop iterations | `100` |
+| `autopilot.enabled` | Enable Autopilot mode | `true` |
+| `autopilot.maxPhaseRetries` | Max retries per phase | `3` |
+| `autopilot.delegationEnforcement` | `strict`, `warn`, `off` | `warn` |
+| `ultraqa.enabled` | Enable UltraQA | `true` |
+| `ultraqa.maxIterations` | Max QA iterations | `10` |
+| `orchestrator.delegationEnforcement` | Delegation enforcement level | `warn` |
+| `orchestrator.auditLogEnabled` | Enable audit logging | `true` |
+
+### Model Provider Configuration
+
+By default, oh-my-claudecode-opencode uses **GitHub Copilot Claude 4 models** for the three tiers:
+
+| Tier | Default Model |
+|------|---------------|
+| `haiku` / `LOW` | `github-copilot/claude-haiku-4` |
+| `sonnet` / `MEDIUM` | `github-copilot/claude-sonnet-4` |
+| `opus` / `HIGH` | `github-copilot/claude-opus-4` |
+
+To use other providers like Google or OpenAI, configure `model_mapping.tierDefaults`:
+
+```json
+{
+  "model_mapping": {
+    "tierDefaults": {
+      "haiku": "google/gemini-3-flash",
+      "sonnet": "google/gemini-3-pro",
+      "opus": "openai/gpt-5"
+    }
+  }
+}
+```
+
+### Intelligent Routing
+
+The plugin includes intelligent model routing with automatic tier escalation:
+
+```json
+{
+  "routing": {
+    "enabled": true,
+    "defaultTier": "MEDIUM",
+    "escalationEnabled": true,
+    "maxEscalations": 2,
+    "tierModels": {
+      "LOW": "github-copilot/claude-haiku-4",
+      "MEDIUM": "github-copilot/claude-sonnet-4",
+      "HIGH": "github-copilot/claude-opus-4"
+    },
+    "agentOverrides": {
+      "architect": { "tier": "HIGH", "reason": "Deep reasoning required" },
+      "explore": { "tier": "LOW", "reason": "Search-focused" }
+    },
+    "escalationKeywords": ["critical", "production", "urgent", "security"],
+    "simplificationKeywords": ["find", "list", "show", "where"]
+  }
+}
+```
+
+### Features Configuration
+
+Toggle platform features:
+
+```json
+{
+  "features": {
+    "parallelExecution": true,
+    "lspTools": true,
+    "astTools": true,
+    "continuationEnforcement": true,
+    "autoContextInjection": true
+  }
+}
+```
+
+### MCP Servers
+
+Configure MCP server integrations:
+
+```json
+{
+  "mcpServers": {
+    "exa": { "enabled": true, "apiKey": "your-api-key" },
+    "context7": { "enabled": true },
+    "grepApp": { "enabled": true }
+  }
+}
+```
+
+### Permissions
+
+Control allowed operations:
+
+```json
+{
+  "permissions": {
+    "allowBash": true,
+    "allowEdit": true,
+    "allowWrite": true,
+    "maxBackgroundTasks": 5
+  }
+}
+```
+
+### Magic Keywords
+
+Customize trigger keywords:
+
+```json
+{
+  "magicKeywords": {
+    "ultrawork": ["ultrawork", "ulw", "uw"],
+    "search": ["search", "find", "locate"],
+    "analyze": ["analyze", "investigate", "examine"],
+    "ultrathink": ["ultrathink", "think", "reason", "ponder"]
+  }
+}
+```
 
 ### Disabling Hooks
 
@@ -265,8 +392,8 @@ When triggered:
 
 ```bash
 # Clone the repo
-git clone https://github.com/devswha/oh-my-ssalsyphus.git
-cd oh-my-ssalsyphus
+git clone https://github.com/devswha/oh-my-claudecode-opencode.git
+cd oh-my-claudecode-opencode
 
 # Install dependencies
 bun install
