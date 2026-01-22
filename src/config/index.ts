@@ -4,10 +4,20 @@ import { z } from "zod";
 
 const AgentConfigSchema = z.object({
   model: z.string().optional(),
+  tier: z.enum(["haiku", "sonnet", "opus"]).optional(),
   temperature: z.number().min(0).max(2).optional(),
   top_p: z.number().min(0).max(1).optional(),
   disable: z.boolean().optional(),
   prompt_append: z.string().optional(),
+});
+
+const ModelMappingConfigSchema = z.object({
+  tierDefaults: z.object({
+    haiku: z.string().optional(),
+    sonnet: z.string().optional(),
+    opus: z.string().optional(),
+  }).optional(),
+  debugLogging: z.boolean().optional(),
 });
 
 const BackgroundTaskConfigSchema = z.object({
@@ -68,6 +78,7 @@ export type TuiStatusConfig = z.infer<typeof TuiStatusConfigSchema>;
 const OmoOmcsConfigSchema = z.object({
   $schema: z.string().optional(),
   agents: z.record(z.string(), AgentConfigSchema).optional(),
+  model_mapping: ModelMappingConfigSchema.optional(),
   disabled_hooks: z.array(z.string()).optional(),
   disabled_agents: z.array(z.string()).optional(),
   disabled_skills: z.array(z.string()).optional(),
@@ -90,6 +101,7 @@ const OmoOmcsConfigSchema = z.object({
 
 export type OmoOmcsConfig = z.infer<typeof OmoOmcsConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
+export type ModelMappingConfig = z.infer<typeof ModelMappingConfigSchema>;
 export type BackgroundTaskConfig = z.infer<typeof BackgroundTaskConfigSchema>;
 export type RalphLoopConfig = z.infer<typeof RalphLoopConfigSchema>;
 export type AutopilotConfig = z.infer<typeof AutopilotConfigSchema>;

@@ -2,6 +2,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import type { OmoOmcsConfig } from "../config";
 import { agents, type AgentDefinition } from "../agents";
 import { log } from "../shared/logger";
+import { ModelResolver, type AgentModelConfig } from "../config/model-resolver";
 
 // OpenCode Config types (from SDK)
 interface AgentConfig {
@@ -955,18 +956,22 @@ If the user's approach seems problematic:
 
 // Build subagent configs
 function buildSubagentConfigs(
-  agentOverrides?: Record<string, { model?: string; temperature?: number }>
+  modelResolver: ModelResolver,
+  agentOverrides?: Record<string, AgentModelConfig>
 ): Record<string, AgentConfig> {
   const result: Record<string, AgentConfig> = {};
 
   for (const [name, agent] of Object.entries(agents)) {
     const override = agentOverrides?.[name];
 
+    // Resolve model using the new resolver
+    const resolution = modelResolver.resolve(name, agent.model, override);
+
     result[name] = {
       description: agent.description,
       mode: "subagent",
       prompt: agent.systemPrompt,
-      ...(override?.model && { model: override.model }),
+      model: resolution.model,
       ...(override?.temperature !== undefined && { temperature: override.temperature }),
     };
   }
@@ -990,6 +995,9 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       return;
     }
 
+    // Initialize model resolver
+    const modelResolver = new ModelResolver(pluginConfig.model_mapping);
+
     // Get available subagents
     const availableAgents = Object.values(agents);
 
@@ -1008,7 +1016,7 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
     config.agent["Ssalsyphus"] = ssalsyphusConfig;
 
     // Register subagents
-    const subagentConfigs = buildSubagentConfigs(pluginConfig.agents);
+    const subagentConfigs = buildSubagentConfigs(modelResolver, pluginConfig.agents);
     for (const [name, agentConfig] of Object.entries(subagentConfigs)) {
       config.agent[name] = agentConfig;
     }

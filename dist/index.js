@@ -13549,10 +13549,19 @@ config(en_default());
 // src/config/index.ts
 var AgentConfigSchema = exports_external.object({
   model: exports_external.string().optional(),
+  tier: exports_external.enum(["haiku", "sonnet", "opus"]).optional(),
   temperature: exports_external.number().min(0).max(2).optional(),
   top_p: exports_external.number().min(0).max(1).optional(),
   disable: exports_external.boolean().optional(),
   prompt_append: exports_external.string().optional()
+});
+var ModelMappingConfigSchema = exports_external.object({
+  tierDefaults: exports_external.object({
+    haiku: exports_external.string().optional(),
+    sonnet: exports_external.string().optional(),
+    opus: exports_external.string().optional()
+  }).optional(),
+  debugLogging: exports_external.boolean().optional()
 });
 var BackgroundTaskConfigSchema = exports_external.object({
   defaultConcurrency: exports_external.number().min(1).max(20).optional(),
@@ -13601,6 +13610,7 @@ var TuiStatusConfigSchema = exports_external.object({
 var OmoOmcsConfigSchema = exports_external.object({
   $schema: exports_external.string().optional(),
   agents: exports_external.record(exports_external.string(), AgentConfigSchema).optional(),
+  model_mapping: ModelMappingConfigSchema.optional(),
   disabled_hooks: exports_external.array(exports_external.string()).optional(),
   disabled_agents: exports_external.array(exports_external.string()).optional(),
   disabled_skills: exports_external.array(exports_external.string()).optional(),
@@ -13682,6 +13692,11 @@ function log(message, data) {
   const timestamp = new Date().toISOString();
   const dataStr = data ? ` ${JSON.stringify(data)}` : "";
   console.log(`[omo-omcs] ${timestamp} ${message}${dataStr}`);
+}
+function warn(message, data) {
+  const timestamp = new Date().toISOString();
+  const dataStr = data ? ` ${JSON.stringify(data)}` : "";
+  console.warn(`[omo-omcs] ${timestamp} WARN: ${message}${dataStr}`);
 }
 
 // src/tools/background-manager.ts
@@ -27088,6 +27103,81 @@ function getCanonicalName(name) {
   return aliasMap[name] || name;
 }
 
+// src/config/model-resolver.ts
+var HARDCODED_TIER_DEFAULTS = {
+  haiku: "anthropic/claude-haiku",
+  sonnet: "anthropic/claude-sonnet-4",
+  opus: "anthropic/claude-opus-4"
+};
+function isValidModelFormat(model) {
+  return /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(model);
+}
+function validateModelFormat(model, context) {
+  if (!isValidModelFormat(model)) {
+    warn(`[model-resolver] [${context}] Model "${model}" does not follow "provider/model-name" format`);
+  }
+}
+
+class ModelResolver {
+  tierDefaults;
+  debugLogging;
+  constructor(config3) {
+    this.tierDefaults = {
+      ...HARDCODED_TIER_DEFAULTS,
+      ...config3?.tierDefaults
+    };
+    this.debugLogging = config3?.debugLogging ?? false;
+  }
+  resolve(agentName, agentDefinitionTier, agentOverride) {
+    if (agentOverride?.model) {
+      validateModelFormat(agentOverride.model, `agent=${agentName}`);
+      if (this.debugLogging) {
+        log(`[model-resolver] ${agentName}: per-agent-override model="${agentOverride.model}"`);
+      }
+      return {
+        model: agentOverride.model,
+        source: "per-agent-override"
+      };
+    }
+    if (agentOverride?.tier) {
+      const model2 = this.tierDefaults[agentOverride.tier];
+      validateModelFormat(model2, `agent=${agentName},tier=${agentOverride.tier}`);
+      if (this.debugLogging) {
+        log(`[model-resolver] ${agentName}: tier-default for tier="${agentOverride.tier}" model="${model2}"`);
+      }
+      return {
+        model: model2,
+        source: "tier-default",
+        originalTier: agentOverride.tier
+      };
+    }
+    if (agentDefinitionTier) {
+      const model2 = this.tierDefaults[agentDefinitionTier];
+      validateModelFormat(model2, `agent=${agentName},tier=${agentDefinitionTier}`);
+      if (this.debugLogging) {
+        log(`[model-resolver] ${agentName}: tier-default for definition tier="${agentDefinitionTier}" model="${model2}"`);
+      }
+      return {
+        model: model2,
+        source: "tier-default",
+        originalTier: agentDefinitionTier
+      };
+    }
+    const model = this.tierDefaults.sonnet;
+    validateModelFormat(model, `agent=${agentName},fallback=sonnet`);
+    if (this.debugLogging) {
+      log(`[model-resolver] ${agentName}: hardcoded-fallback model="${model}"`);
+    }
+    return {
+      model,
+      source: "hardcoded-fallback"
+    };
+  }
+  getTierDefaults() {
+    return { ...this.tierDefaults };
+  }
+}
+
 // src/plugin-handlers/config-handler.ts
 var SLASH_COMMANDS = {
   ultrawork: {
@@ -27999,15 +28089,16 @@ If the user's approach seems problematic:
 </Communication_Style>`
   };
 }
-function buildSubagentConfigs(agentOverrides) {
+function buildSubagentConfigs(modelResolver, agentOverrides) {
   const result = {};
   for (const [name, agent] of Object.entries(agents)) {
     const override = agentOverrides?.[name];
+    const resolution = modelResolver.resolve(name, agent.model, override);
     result[name] = {
       description: agent.description,
       mode: "subagent",
       prompt: agent.systemPrompt,
-      ...override?.model && { model: override.model },
+      model: resolution.model,
       ...override?.temperature !== undefined && { temperature: override.temperature }
     };
   }
@@ -28021,6 +28112,7 @@ function createConfigHandler(deps) {
       log("Ssalsyphus agent disabled by config");
       return;
     }
+    const modelResolver = new ModelResolver(pluginConfig.model_mapping);
     const availableAgents = Object.values(agents);
     const ssalsyphusConfig = buildSsalsyphusAgent(pluginConfig, availableAgents);
     config3.default_agent = "Ssalsyphus";
@@ -28028,7 +28120,7 @@ function createConfigHandler(deps) {
       config3.agent = {};
     }
     config3.agent["Ssalsyphus"] = ssalsyphusConfig;
-    const subagentConfigs = buildSubagentConfigs(pluginConfig.agents);
+    const subagentConfigs = buildSubagentConfigs(modelResolver, pluginConfig.agents);
     for (const [name, agentConfig] of Object.entries(subagentConfigs)) {
       config3.agent[name] = agentConfig;
     }

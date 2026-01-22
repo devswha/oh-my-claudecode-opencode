@@ -1,10 +1,23 @@
 import { z } from "zod";
 declare const AgentConfigSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
+    tier: z.ZodOptional<z.ZodEnum<{
+        haiku: "haiku";
+        sonnet: "sonnet";
+        opus: "opus";
+    }>>;
     temperature: z.ZodOptional<z.ZodNumber>;
     top_p: z.ZodOptional<z.ZodNumber>;
     disable: z.ZodOptional<z.ZodBoolean>;
     prompt_append: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+declare const ModelMappingConfigSchema: z.ZodObject<{
+    tierDefaults: z.ZodOptional<z.ZodObject<{
+        haiku: z.ZodOptional<z.ZodString>;
+        sonnet: z.ZodOptional<z.ZodString>;
+        opus: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>;
+    debugLogging: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
 declare const BackgroundTaskConfigSchema: z.ZodObject<{
     defaultConcurrency: z.ZodOptional<z.ZodNumber>;
@@ -66,11 +79,24 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
     $schema: z.ZodOptional<z.ZodString>;
     agents: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
         model: z.ZodOptional<z.ZodString>;
+        tier: z.ZodOptional<z.ZodEnum<{
+            haiku: "haiku";
+            sonnet: "sonnet";
+            opus: "opus";
+        }>>;
         temperature: z.ZodOptional<z.ZodNumber>;
         top_p: z.ZodOptional<z.ZodNumber>;
         disable: z.ZodOptional<z.ZodBoolean>;
         prompt_append: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>>>;
+    model_mapping: z.ZodOptional<z.ZodObject<{
+        tierDefaults: z.ZodOptional<z.ZodObject<{
+            haiku: z.ZodOptional<z.ZodString>;
+            sonnet: z.ZodOptional<z.ZodString>;
+            opus: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+        debugLogging: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$strip>>;
     disabled_hooks: z.ZodOptional<z.ZodArray<z.ZodString>>;
     disabled_agents: z.ZodOptional<z.ZodArray<z.ZodString>>;
     disabled_skills: z.ZodOptional<z.ZodArray<z.ZodString>>;
@@ -138,6 +164,7 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
 }, z.core.$strip>;
 export type OmoOmcsConfig = z.infer<typeof OmoOmcsConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
+export type ModelMappingConfig = z.infer<typeof ModelMappingConfigSchema>;
 export type BackgroundTaskConfig = z.infer<typeof BackgroundTaskConfigSchema>;
 export type RalphLoopConfig = z.infer<typeof RalphLoopConfigSchema>;
 export type AutopilotConfig = z.infer<typeof AutopilotConfigSchema>;
