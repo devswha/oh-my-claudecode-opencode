@@ -1,226 +1,320 @@
-# omo-omcs Update Specification
+# OMCO Improvement Spec (v2 - Critic Reviewed)
 
-## From: v0.1.11 (oh-my-claudecode v3.0.11)
-## To: v0.2.0 (oh-my-claudecode v3.3.6 feature parity)
-
----
-
-## Executive Summary
-
-omo-omcs를 oh-my-claudecode v3.3.6 수준으로 업데이트한다. OpenCode API 제한으로 인해 일부 기능은 제외하고, 핵심 기능에 집중한다.
+**Date**: 2026-01-23
+**Status**: PLANNING_COMPLETE
 
 ---
 
-## Scope Definition
+## Summary
 
-### IN SCOPE (Must Port)
+OMC vs OMCO 비교 문서를 분석하여 OMCO 개선 사항 도출.
+- CRITICAL: 4개 (3개 기존 + 1개 추가)
+- HIGH: 4개 (3개 기존 + 1개 추가)
+- MEDIUM: 3개
+- LOW: 3개
 
-| Category | Feature | Priority |
-|----------|---------|----------|
-| **Agents** | scientist, scientist-low, scientist-high | HIGH |
-| **Agents** | coordinator agent | MEDIUM |
-| **Hooks** | autopilot hook | HIGH |
-| **Hooks** | ultraqa-loop hook | HIGH |
-| **Hooks** | context-window-limit-recovery | MEDIUM |
-| **Hooks** | edit-error-recovery | MEDIUM |
-| **Hooks** | preemptive-compaction | MEDIUM |
-| **Hooks** | learner hook | MEDIUM |
-| **Hooks** | omc-orchestrator | HIGH |
-| **Hooks** | ralph-prd improvements | HIGH |
-| **Hooks** | ralph-progress improvements | HIGH |
-| **State** | Enhanced state persistence | HIGH |
-| **Config** | Updated schema for new features | HIGH |
+---
 
-### OUT OF SCOPE (OpenCode Limitations)
+## Issues List (Updated per Critic Review)
 
-| Feature | Reason |
-|---------|--------|
-| HUD Statusline | Requires shell hook |
-| Stop Hook (proactive) | OpenCode lacks Stop event |
-| background-notification | Requires OS integration |
-| non-interactive-env | Shell-specific |
-| think-mode | Claude Code thinking API specific |
-| Python REPL for scientist | OpenCode doesn't support REPL |
+### CRITICAL Priority
 
-### DEFERRED (Future Release)
+| ID | Title | Description |
+|----|-------|-------------|
+| OMCO-001 | Expand call_omo_agent to support all 24 agents | Currently hardcoded to `["explore", "librarian"]` only |
+| OMCO-002 | Inject agent system prompts in delegated sessions | Agent's systemPrompt field not used when spawning |
+| OMCO-003 | Pass model tier to OpenCode Task tool | Agent model (haiku/sonnet/opus) not passed to sessions |
+| **OMCO-014** | **Add executor Task tool blocking** | Executors can spawn sub-agents, violating "no delegation" rule |
 
-| Feature | Reason |
-|---------|--------|
-| Mnemosyne Skills | Complex, needs separate design |
-| Full skill system (28 skills) | Incremental rollout preferred |
-| MCP server integration | Depends on OpenCode MCP support |
+### HIGH Priority
+
+| ID | Title | Description |
+|----|-------|-------------|
+| OMCO-004 | ~~Implement Boulder State~~ Extend AutopilotState | Track plan progress (extend existing AutopilotState) |
+| OMCO-005 | Add Git diff stats to orchestrator | Show changes summary in completion phase |
+| OMCO-006 | Add file path validation for direct writes | Warn when writing to source files directly |
+| **OMCO-007** | **Model availability check at startup** | Upgraded from MEDIUM - prevents cryptic errors |
+| **OMCO-015** | **Fix background task result extraction** | background_output returns empty - result not captured |
+
+### MEDIUM Priority
+
+| ID | Title | Description |
+|----|-------|-------------|
+| OMCO-008 | Background task timeout | Prevent hung tasks (configurable, default 5 min) |
+| OMCO-010 | Agent metadata file separation | Split 1000+ line agents/index.ts |
+
+### LOW Priority
+
+| ID | Title | Description |
+|----|-------|-------------|
+| OMCO-009 | Audit log rotation | Downgraded - nice-to-have |
+| OMCO-011 | MCP server integration research | Investigate OpenCode's MCP support feasibility |
+| OMCO-012 | Context window monitoring | Warning at 80% capacity |
+| OMCO-013 | Agent usage telemetry | Optional opt-in metrics |
 
 ---
 
 ## Technical Specification
 
-### 1. New Agent Definitions
+### CRITICAL-1: call_omo_agent Agent Support (OMCO-001)
 
-#### scientist agents
+**File**: `src/tools/call-omo-agent.ts`
+
+**Changes**:
 ```typescript
-// src/agents/index.ts additions
-scientist: {
-  name: "scientist",
-  description: "Data analysis and research execution specialist",
-  model: "sonnet",
-  tools: ["Read", "Grep", "Glob", "Bash"],
-  systemPrompt: "..." // Port from oh-my-claudecode
-}
+import { getAgent, listAgentNames, getCanonicalName, isAlias } from "../agents";
 
-scientist-low: {
-  name: "scientist-low",
-  model: "haiku",
-  description: "Quick data inspection and simple statistics"
-}
+// Replace enum with string + validation
+subagent_type: tool.schema
+  .string()
+  .describe(`Agent type. Available: ${listAgentNames().join(', ')}`)
 
-scientist-high: {
-  name: "scientist-high",
-  model: "opus",
-  description: "Complex research, hypothesis testing, and ML specialist"
+// In execute():
+const canonicalName = isAlias(subagent_type) ? getCanonicalName(subagent_type) : subagent_type;
+const agent = getAgent(canonicalName);
+if (!agent) {
+  return JSON.stringify({
+    status: "failed",
+    error: `Unknown agent: ${subagent_type}. Available: ${listAgentNames().join(', ')}`
+  });
 }
 ```
 
-#### coordinator agent
+### CRITICAL-2: System Prompt Injection (OMCO-002)
+
+**Files**: `src/tools/call-omo-agent.ts`, `src/tools/background-manager.ts`
+
+**Approach**: Prepend system prompt to user prompt (SDK doesn't support system field)
+
 ```typescript
-coordinator: {
-  name: "coordinator",
-  description: "Multi-agent task coordination and delegation",
-  model: "sonnet",
-  tools: ["Read", "Task"]
+const agent = getAgent(canonicalName);
+const fullPrompt = agent?.systemPrompt
+  ? `${agent.systemPrompt}\n\n---\n\nUser Task:\n${prompt}`
+  : prompt;
+
+await ctx.client.session.prompt({
+  path: { id: sessionID },
+  body: {
+    parts: [{ type: "text", text: fullPrompt }],
+  },
+  query: { directory: ctx.directory },
+});
+```
+
+### CRITICAL-3: Model Tier Resolution (OMCO-003)
+
+**Files**: `src/tools/call-omo-agent.ts`, `src/tools/background-manager.ts`
+
+**Note**: OpenCode SDK session.create may not support `model` field. Implementation will verify and document SDK capabilities.
+
+```typescript
+import { ModelResolver } from "../config/model-resolver";
+
+// Get resolved model
+const resolver = new ModelResolver(config.model_mapping);
+const resolution = resolver.resolve(canonicalName, agent?.model);
+
+// Pass to session if SDK supports it
+await ctx.client.session.create({
+  body: {
+    parentID: context.sessionID,
+    title: `${canonicalName}: ${description}`,
+    model: resolution.model,  // May need SDK verification
+  },
+  query: { directory: ctx.directory },
+});
+```
+
+### CRITICAL-4: Executor Task Tool Blocking (OMCO-014)
+
+**File**: `src/hooks/omc-orchestrator.ts`
+
+**Add to TOOL_RESTRICTIONS**:
+```typescript
+const TOOL_RESTRICTIONS: Record<string, string[]> = {
+  // READ-ONLY agents - block Write/Edit
+  architect: ["Write", "Edit"],
+  "architect-low": ["Write", "Edit"],
+  "architect-medium": ["Write", "Edit"],
+  planner: ["Write", "Edit"],
+  analyst: ["Write", "Edit"],
+  critic: ["Write", "Edit"],
+  vision: ["Write", "Edit"],
+  explore: ["Write", "Edit"],
+  "explore-medium": ["Write", "Edit"],
+  researcher: ["Write", "Edit"],
+  "researcher-low": ["Write", "Edit"],
+  // EXECUTOR agents - block Task (no delegation)
+  executor: ["Task"],
+  "executor-low": ["Task"],
+  "executor-high": ["Task"],
+};
+```
+
+### HIGH-1: Extend AutopilotState (OMCO-004)
+
+**File**: `src/state/autopilot-state.ts`
+
+Instead of new BoulderState, extend AutopilotState:
+```typescript
+export interface AutopilotState {
+  // ... existing fields
+  planProgress?: {
+    currentPhase: number;
+    phases: Array<{
+      name: string;
+      tasks: Array<{
+        id: string;
+        description: string;
+        status: "pending" | "in_progress" | "completed" | "failed";
+        assignedAgent?: string;
+      }>;
+    }>;
+  };
 }
 ```
 
-### 2. New Hooks
+### HIGH-2: Git Diff Stats (OMCO-005)
 
-#### autopilot hook
-- Trigger: `/autopilot` command or "autopilot:" keyword
-- State: `.omc/autopilot-state.json`
-- Phases: Expansion → Planning → Execution → QA → Validation
-- Integration: Uses ralph-loop for persistence
-
-#### ultraqa-loop hook
-- Trigger: `/ultraqa` command
-- Pattern: Build → Lint → Test → Fix → Repeat
-- State: `.omc/ultraqa-state.json`
-- Exit: All checks pass or max iterations
-
-#### context-window-limit-recovery hook
-- Trigger: Token limit error detection
-- Action: Truncate context, inject recovery prompt
-- Event: `tool.execute.after` with error pattern matching
-
-#### edit-error-recovery hook
-- Trigger: Edit tool failure
-- Action: Suggest alternative approach
-- Event: `tool.execute.after` for Edit tool
-
-#### omc-orchestrator hook
-- Purpose: Central delegation coordinator
-- Validates agent selection
-- Enforces tool restrictions per agent
-- Tracks delegation audit log
-
-### 3. Enhanced State Management
+**New File**: `src/shared/git-utils.ts`
 
 ```typescript
-// src/state/autopilot-state.ts
-interface AutopilotState {
-  sessionId: string;
-  phase: 'expansion' | 'planning' | 'execution' | 'qa' | 'validation' | 'complete';
-  spec: string;
-  plan: string;
-  progress: TaskProgress[];
-  startedAt: string;
-  completedAt?: string;
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
+export interface GitDiffStats {
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+  files: Array<{
+    path: string;
+    status: "added" | "modified" | "deleted";
+    insertions: number;
+    deletions: number;
+  }>;
 }
 
-// src/state/ultraqa-state.ts
-interface UltraQAState {
-  sessionId: string;
-  goal: string;
-  iteration: number;
-  maxIterations: number;
-  lastBuildResult?: 'pass' | 'fail';
-  lastTestResult?: 'pass' | 'fail';
-  issues: string[];
+export async function getGitDiffStats(directory: string): Promise<GitDiffStats | null> {
+  try {
+    const { stdout } = await execAsync("git diff --numstat HEAD~1", { cwd: directory });
+    // Parse output...
+  } catch {
+    return null;
+  }
 }
 ```
 
-### 4. Configuration Schema Update
+### HIGH-3: File Path Validation (OMCO-006)
+
+**File**: `src/hooks/omc-orchestrator.ts`
 
 ```typescript
-// Add to config schema
-autopilot: {
-  enabled: boolean;
-  maxPhaseRetries: number;
-  delegationEnforcement: 'strict' | 'warn' | 'off';
-}
+const ALLOWED_DIRECT_WRITE_PATTERNS = [
+  /^\.omc\//,
+  /^\.claude\//,
+  /CLAUDE\.md$/,
+  /AGENTS\.md$/,
+];
 
-ultraqa: {
-  enabled: boolean;
-  maxIterations: number;
-  buildCommand: string;
-  testCommand: string;
-  lintCommand: string;
-}
+const WARNED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java"];
 
-scientist: {
-  enabled: boolean;
-  replFallback: 'bash' | 'disabled';
+// In tool.execute.before hook:
+if (input.tool === "Write" || input.tool === "Edit") {
+  const filePath = output.args.file_path as string;
+  if (shouldWarnOnWrite(filePath)) {
+    log("[omc-orchestrator] Direct write to source file", { file: filePath });
+  }
 }
 ```
 
-### 5. Version Bump
+### HIGH-4: Model Availability Check (OMCO-007)
 
-```json
-{
-  "version": "0.2.0",
-  "description": "OpenCode port of oh-my-claudecode v3.3.6"
+**File**: `src/plugin-handlers/config-handler.ts`
+
+```typescript
+// At plugin initialization
+async function checkModelAvailability(ctx: PluginInput) {
+  const models = ["github-copilot/claude-haiku-4", "github-copilot/claude-sonnet-4", "github-copilot/claude-opus-4"];
+  for (const model of models) {
+    // Attempt lightweight API call to verify model availability
+    // Log warning if model not accessible
+  }
 }
+```
+
+### HIGH-5: Background Task Result Extraction (OMCO-015)
+
+**File**: `src/tools/background-manager.ts`
+
+```typescript
+// In pollTask() or completion handler:
+const messagesResp = await ctx.client.session.messages({
+  path: { id: task.sessionID },
+});
+
+const messages = messagesResp.data ?? [];
+const lastAssistant = [...messages].reverse().find(m => m.info?.role === "assistant");
+const result = lastAssistant?.parts
+  ?.filter(p => p.type === "text" && p.text)
+  .map(p => p.text)
+  .join("\n") || "";
+
+task.result = result;  // Store the actual result
 ```
 
 ---
 
 ## File Changes Summary
 
-### New Files
-- `src/hooks/autopilot.ts`
-- `src/hooks/ultraqa-loop.ts`
-- `src/hooks/context-recovery.ts`
-- `src/hooks/edit-error-recovery.ts`
-- `src/hooks/omc-orchestrator.ts`
-- `src/state/autopilot-state.ts`
-- `src/state/ultraqa-state.ts`
-- `src/agents/scientist.ts`
-- `src/agents/coordinator.ts`
-
-### Modified Files
-- `src/index.ts` - Wire new hooks
-- `src/agents/index.ts` - Add new agents
-- `src/config/index.ts` - New config options
-- `src/hooks/index.ts` - Export new hooks
-- `src/state/index.ts` - Export new state modules
-- `package.json` - Version bump to 0.2.0
-
-### Test Files
-- `tests/autopilot.test.ts`
-- `tests/ultraqa.test.ts`
-- `tests/scientist.test.ts`
+| File | Action | Issues |
+|------|--------|--------|
+| `src/tools/call-omo-agent.ts` | MODIFY | OMCO-001, 002, 003 |
+| `src/tools/background-manager.ts` | MODIFY | OMCO-002, 003, 015 |
+| `src/hooks/omc-orchestrator.ts` | MODIFY | OMCO-006, 014 |
+| `src/state/autopilot-state.ts` | MODIFY | OMCO-004 |
+| `src/shared/git-utils.ts` | CREATE | OMCO-005 |
+| `src/plugin-handlers/config-handler.ts` | MODIFY | OMCO-007 |
 
 ---
 
-## Migration Notes
+## Implementation Order (Updated)
 
-### Breaking Changes
-- None expected for existing users
-
-### Deprecations
-- Legacy agent aliases still work (oracle → architect, etc.)
-
-### New Defaults
-- `autopilot.delegationEnforcement: 'warn'`
-- `ultraqa.maxIterations: 10`
+1. **OMCO-001**: call_omo_agent agent support (Low effort) - Unlocks all agents
+2. **OMCO-002**: System prompt injection (Medium effort) - Foundation for agent behavior
+3. **OMCO-003**: Model tier resolution (Medium effort) - Completes agent configuration
+4. **OMCO-014**: Executor Task blocking (Low effort) - Enforces delegation rules
+5. **OMCO-015**: Background task result extraction (Low effort) - Fixes broken tool
+6. **OMCO-006**: Path validation (Low effort) - Discipline enforcement
+7. **OMCO-005**: Git diff stats (Low effort) - UX improvement
+8. **OMCO-007**: Model availability check (Medium effort) - Error prevention
+9. **OMCO-004**: Extend AutopilotState (Medium effort) - Plan tracking
 
 ---
 
-**EXPANSION_COMPLETE**
+## Acceptance Criteria
+
+| ID | Criteria |
+|----|----------|
+| OMCO-001 | All 24 agents callable via subagent_type parameter |
+| OMCO-002 | Agent's systemPrompt prepended to session prompts |
+| OMCO-003 | Correct model selected based on agent tier |
+| OMCO-014 | Executor agents cannot spawn Task tool calls |
+| OMCO-015 | background_output returns actual agent response |
+| OMCO-006 | Warning logged when writing to source files |
+| OMCO-005 | Git diff stats available in completion phase |
+| OMCO-007 | Clear warning if GitHub Copilot models unavailable |
+| OMCO-004 | Plan progress tracked in AutopilotState |
+
+---
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| HUD (Status Bar) | OpenCode has native TUI |
+| CLI tools | OpenCode has its own CLI |
+| Learner skill | Defer until core stable |
+| Think Mode | Investigate OpenCode native support first |
+| Separate Boulder State | Use extended AutopilotState instead |
