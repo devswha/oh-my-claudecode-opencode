@@ -268,7 +268,9 @@ MIT - see [LICENSE](LICENSE)
 
 <div align="center">
 
-Inspired by [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode)
+**Inspired by:**
+
+[oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode) • [claude-hud](https://github.com/ryanjoachim/claude-hud) • [Superpowers](https://github.com/NexTechFusion/Superpowers) • [everything-claude-code](https://github.com/affaan-m/everything-claude-code)
 
 **Zero learning curve. Maximum power.**
 
