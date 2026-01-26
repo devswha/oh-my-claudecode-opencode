@@ -1,185 +1,156 @@
 ---
 name: omc-setup
-description: One-time setup for oh-my-claudecode (the ONLY command you need to learn)
+description: Setup and configure oh-my-claudecode-opencode (the ONLY command you need to learn)
 user-invocable: true
 ---
 
-# OMC Setup
+# OMCO Setup (OpenCode)
 
 This is the **only command you need to learn**. After running this, everything else is automatic.
 
-## Step 1: Ask User Preference
+## Step 1: Configure Model Tier Mapping
 
-Use the AskUserQuestion tool to prompt the user:
+Ask the user which AI provider they primarily use with AskUserQuestion:
 
-**Question:** "Where should I configure oh-my-claudecode?"
+**Question:** "Which AI provider do you use for OpenCode?"
 
 **Options:**
-1. **Local (this project)** - Creates `.claude/CLAUDE.md` in current project directory. Best for project-specific configurations.
-2. **Global (all projects)** - Creates `~/.claude/CLAUDE.md` for all Claude Code sessions. Best for consistent behavior everywhere.
+1. **OpenAI** - GPT-4o, GPT-5, o1, Codex models
+2. **Google** - Gemini models
+3. **Anthropic (Claude)** - Claude models via API
+4. **GitHub Copilot** - Claude models via GitHub Copilot
+5. **Skip** - I'll configure manually later
 
-## Step 2: Execute Based on Choice
+### Based on choice, create `~/.config/opencode/omco.json`:
 
-### If User Chooses LOCAL:
-
+**OpenAI:**
 ```bash
-# Create .claude directory in current project
-mkdir -p .claude
+mkdir -p ~/.config/opencode
+cat > ~/.config/opencode/omco.json << 'EOF'
+{
+  "model_mapping": {
+    "tierDefaults": {
+      "haiku": "openai/gpt-4o-mini",
+      "sonnet": "openai/gpt-4o",
+      "opus": "openai/o1"
+    }
+  }
+}
+EOF
+echo "Created omco.json with OpenAI tier mapping"
+```
 
-# Extract old version before download
-OLD_VERSION=$(grep -m1 "^# oh-my-claudecode" .claude/CLAUDE.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "none")
+**Google:**
+```bash
+mkdir -p ~/.config/opencode
+cat > ~/.config/opencode/omco.json << 'EOF'
+{
+  "model_mapping": {
+    "tierDefaults": {
+      "haiku": "google/gemini-2.0-flash",
+      "sonnet": "google/gemini-2.5-pro",
+      "opus": "google/gemini-2.5-pro"
+    }
+  }
+}
+EOF
+echo "Created omco.json with Google tier mapping"
+```
 
-# Download fresh CLAUDE.md from GitHub
-curl -fsSL "https://raw.githubusercontent.com/Yeachan-Heo/oh-my-claudecode/main/docs/CLAUDE.md" -o .claude/CLAUDE.md && \
-echo "Downloaded CLAUDE.md to .claude/CLAUDE.md"
+**Anthropic (Claude):**
+```bash
+mkdir -p ~/.config/opencode
+cat > ~/.config/opencode/omco.json << 'EOF'
+{
+  "model_mapping": {
+    "tierDefaults": {
+      "haiku": "anthropic/claude-3-5-haiku-latest",
+      "sonnet": "anthropic/claude-sonnet-4-20250514",
+      "opus": "anthropic/claude-opus-4-20250514"
+    }
+  }
+}
+EOF
+echo "Created omco.json with Anthropic tier mapping"
+```
 
-# Extract new version and report
-NEW_VERSION=$(grep -m1 "^# oh-my-claudecode" .claude/CLAUDE.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-if [ "$OLD_VERSION" = "none" ]; then
-  echo "Installed CLAUDE.md: $NEW_VERSION"
-elif [ "$OLD_VERSION" = "$NEW_VERSION" ]; then
-  echo "CLAUDE.md unchanged: $NEW_VERSION"
+**GitHub Copilot:**
+```bash
+mkdir -p ~/.config/opencode
+cat > ~/.config/opencode/omco.json << 'EOF'
+{
+  "model_mapping": {
+    "tierDefaults": {
+      "haiku": "github-copilot/claude-3.5-sonnet",
+      "sonnet": "github-copilot/claude-sonnet-4",
+      "opus": "github-copilot/claude-sonnet-4"
+    }
+  }
+}
+EOF
+echo "Created omco.json with GitHub Copilot tier mapping"
+```
+
+**Skip:** Don't create omco.json. Subagents will inherit parent session model.
+
+### Verify Configuration:
+```bash
+if [ -f ~/.config/opencode/omco.json ]; then
+  echo "Tier mapping configured:"
+  cat ~/.config/opencode/omco.json
 else
-  echo "Updated CLAUDE.md: $OLD_VERSION -> $NEW_VERSION"
+  echo "No tier mapping configured (subagents will inherit parent model)"
 fi
 ```
 
-### If User Chooses GLOBAL:
+## Step 2: Verify Plugin Installation
 
 ```bash
-# Extract old version before download
-OLD_VERSION=$(grep -m1 "^# oh-my-claudecode" ~/.claude/CLAUDE.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "none")
-
-# Download fresh CLAUDE.md to global config
-curl -fsSL "https://raw.githubusercontent.com/Yeachan-Heo/oh-my-claudecode/main/docs/CLAUDE.md" -o ~/.claude/CLAUDE.md && \
-echo "Downloaded CLAUDE.md to ~/.claude/CLAUDE.md"
-
-# Extract new version and report
-NEW_VERSION=$(grep -m1 "^# oh-my-claudecode" ~/.claude/CLAUDE.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-if [ "$OLD_VERSION" = "none" ]; then
-  echo "Installed CLAUDE.md: $NEW_VERSION"
-elif [ "$OLD_VERSION" = "$NEW_VERSION" ]; then
-  echo "CLAUDE.md unchanged: $NEW_VERSION"
+# Check if plugin is in opencode.json
+if grep -q "oh-my-claudecode-opencode" ~/.config/opencode/opencode.json 2>/dev/null; then
+  echo "✅ Plugin registered in opencode.json"
 else
-  echo "Updated CLAUDE.md: $OLD_VERSION -> $NEW_VERSION"
-fi
-```
-
-## Step 3: Setup HUD Statusline
-
-The HUD shows real-time status in Claude Code's status bar. **Invoke the hud skill** to set up and configure:
-
-Use the Skill tool to invoke: `hud` with args: `setup`
-
-This will:
-1. Install the HUD wrapper script to `~/.claude/hud/omc-hud.mjs`
-2. Configure `statusLine` in `~/.claude/settings.json`
-3. Report status and prompt to restart if needed
-
-## Step 3.5: Clear Stale Plugin Cache
-
-Clear old cached plugin versions to avoid conflicts:
-
-```bash
-# Clear stale plugin cache versions
-CACHE_DIR="$HOME/.claude/plugins/cache/omc/oh-my-claudecode"
-if [ -d "$CACHE_DIR" ]; then
-  LATEST=$(ls -1 "$CACHE_DIR" | sort -V | tail -1)
-  CLEARED=0
-  for dir in "$CACHE_DIR"/*; do
-    if [ "$(basename "$dir")" != "$LATEST" ]; then
-      rm -rf "$dir"
-      CLEARED=$((CLEARED + 1))
-    fi
-  done
-  [ $CLEARED -gt 0 ] && echo "Cleared $CLEARED stale cache version(s)" || echo "Cache is clean"
-else
-  echo "No cache directory found (normal for new installs)"
-fi
-```
-
-## Step 3.6: Check for Updates
-
-Notify user if a newer version is available:
-
-```bash
-# Detect installed version
-INSTALLED_VERSION=""
-
-# Try cache directory first
-if [ -d "$HOME/.claude/plugins/cache/omc/oh-my-claudecode" ]; then
-  INSTALLED_VERSION=$(ls -1 "$HOME/.claude/plugins/cache/omc/oh-my-claudecode" | sort -V | tail -1)
-fi
-
-# Try .omc-version.json second
-if [ -z "$INSTALLED_VERSION" ] && [ -f ".omc-version.json" ]; then
-  INSTALLED_VERSION=$(grep -oE '"version":\s*"[^"]+' .omc-version.json | cut -d'"' -f4)
-fi
-
-# Try CLAUDE.md header third (local first, then global)
-if [ -z "$INSTALLED_VERSION" ]; then
-  if [ -f ".claude/CLAUDE.md" ]; then
-    INSTALLED_VERSION=$(grep -m1 "^# oh-my-claudecode" .claude/CLAUDE.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
-  elif [ -f "$HOME/.claude/CLAUDE.md" ]; then
-    INSTALLED_VERSION=$(grep -m1 "^# oh-my-claudecode" "$HOME/.claude/CLAUDE.md" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
-  fi
-fi
-
-# Check npm for latest version
-LATEST_VERSION=$(npm view oh-my-claude-sisyphus version 2>/dev/null)
-
-if [ -n "$INSTALLED_VERSION" ] && [ -n "$LATEST_VERSION" ]; then
-  # Simple version comparison (assumes semantic versioning)
-  if [ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]; then
-    echo ""
-    echo "UPDATE AVAILABLE:"
-    echo "  Installed: v$INSTALLED_VERSION"
-    echo "  Latest:    v$LATEST_VERSION"
-    echo ""
-    echo "To update, run: claude /install-plugin oh-my-claudecode"
+  echo "⚠️ Plugin not in opencode.json - adding..."
+  # Try to add plugin to config
+  if [ -f ~/.config/opencode/opencode.json ]; then
+    # File exists, need to merge
+    echo "Please add 'oh-my-claudecode-opencode' to the plugin array in ~/.config/opencode/opencode.json"
   else
-    echo "You're on the latest version: v$INSTALLED_VERSION"
+    mkdir -p ~/.config/opencode
+    echo '{"plugin":["oh-my-claudecode-opencode"]}' > ~/.config/opencode/opencode.json
+    echo "✅ Created opencode.json with plugin"
   fi
-elif [ -n "$LATEST_VERSION" ]; then
-  echo "Latest version available: v$LATEST_VERSION"
 fi
 ```
 
-## Step 4: Verify Plugin Installation
+## Step 3: Check Installed Version
 
 ```bash
-grep -q "oh-my-claudecode" ~/.claude/settings.json && echo "Plugin verified" || echo "Plugin NOT found - run: claude /install-plugin oh-my-claudecode"
+# Check installed version
+if [ -d ~/.config/opencode/node_modules/oh-my-claudecode-opencode ]; then
+  INSTALLED=$(grep '"version"' ~/.config/opencode/node_modules/oh-my-claudecode-opencode/package.json 2>/dev/null | head -1 | sed 's/.*"\([0-9.]*\)".*/\1/')
+  echo "Installed version: $INSTALLED"
+
+  # Check npm for latest
+  LATEST=$(npm view oh-my-claudecode-opencode version 2>/dev/null)
+  if [ -n "$LATEST" ]; then
+    if [ "$INSTALLED" != "$LATEST" ]; then
+      echo "⚠️ Update available: $LATEST"
+      echo "Run: cd ~/.config/opencode && npm update oh-my-claudecode-opencode"
+    else
+      echo "✅ You're on the latest version"
+    fi
+  fi
+else
+  echo "⚠️ Plugin not installed. Run:"
+  echo "cd ~/.config/opencode && npm install oh-my-claudecode-opencode"
+fi
 ```
 
-## Step 5: Offer MCP Server Configuration
-
-MCP servers extend Claude Code with additional tools (web search, GitHub, etc.).
-
-Ask user: "Would you like to configure MCP servers for enhanced capabilities? (Context7, Exa search, GitHub, etc.)"
-
-If yes, invoke the mcp-setup skill:
-```
-/oh-my-claudecode:mcp-setup
-```
-
-If no, skip to next step.
-
-## Step 6: Detect Upgrade from 2.x
-
-Check if user has existing configuration:
-```bash
-# Check for existing 2.x artifacts
-ls ~/.claude/commands/ralph-loop.md 2>/dev/null || ls ~/.claude/commands/ultrawork.md 2>/dev/null
-```
-
-If found, this is an upgrade from 2.x.
-
-## Step 7: Show Welcome Message
-
-### For New Users:
+## Step 4: Show Welcome Message
 
 ```
-OMC Setup Complete!
+OMCO Setup Complete! (oh-my-claudecode-opencode)
 
 You don't need to learn any commands. I now have intelligent behaviors that activate automatically.
 
@@ -201,45 +172,15 @@ Just include these words naturally in your request:
 
 Combine them: "ralph ulw: migrate the database"
 
-MCP SERVERS:
-Run /oh-my-claudecode:mcp-setup to add tools like web search, GitHub, etc.
+AVAILABLE COMMANDS:
+- /version - Check plugin version
+- /status - Show active modes
+- /doctor - Diagnose issues
+- /help - Usage guide
 
-HUD STATUSLINE:
-The status bar now shows OMC state. Restart Claude Code to see it.
+MODEL TIER MAPPING:
+Your subagents will use the tier mapping you configured.
+Edit ~/.config/opencode/omco.json to customize.
 
-That's it! Just use Claude Code normally.
+Restart OpenCode to apply changes!
 ```
-
-### For Users Upgrading from 2.x:
-
-```
-OMC Setup Complete! (Upgraded from 2.x)
-
-GOOD NEWS: Your existing commands still work!
-- /ralph, /ultrawork, /planner, etc. all still function
-
-WHAT'S NEW in 3.0:
-You no longer NEED those commands. Everything is automatic now:
-- Just say "don't stop until done" instead of /ralph
-- Just say "fast" or "parallel" instead of /ultrawork
-- Just say "plan this" instead of /planner
-- Just say "stop" instead of /cancel-ralph
-
-MAGIC KEYWORDS (power-user shortcuts):
-| Keyword | Same as old... | Example |
-|---------|----------------|---------|
-| ralph | /ralph | "ralph: fix the bug" |
-| ralplan | /ralplan | "ralplan this feature" |
-| ulw | /ultrawork | "ulw refactor API" |
-| plan | /planner | "plan the endpoints" |
-
-HUD STATUSLINE:
-The status bar now shows OMC state. Restart Claude Code to see it.
-
-Your workflow won't break - it just got easier!
-```
-
-## Fallback
-
-If curl fails, tell user to manually download from:
-https://raw.githubusercontent.com/Yeachan-Heo/oh-my-claudecode/main/docs/CLAUDE.md
