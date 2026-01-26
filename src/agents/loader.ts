@@ -64,6 +64,6 @@ export async function loadAllAgents(directory: string): Promise<Map<string, Agen
  */
 export function getAgentsDirectory(): string {
   const currentFile = fileURLToPath(import.meta.url);
-  const projectRoot = join(dirname(currentFile), '..', '..');
+  const projectRoot = join(dirname(currentFile), '..');
   return join(projectRoot, 'assets', 'agents');
 }

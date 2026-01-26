@@ -6,7 +6,7 @@ import type { Skill } from './types.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Load all skills at module initialization
-const SKILLS_DIR = join(__dirname, '../../assets/skills');
+const SKILLS_DIR = join(__dirname, '../assets/skills');
 let skillsCache: Skill[] | null = null;
 
 function getSkillsCache(): Skill[] {
