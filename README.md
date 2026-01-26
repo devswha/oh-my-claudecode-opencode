@@ -8,6 +8,37 @@ Like Sisyphus condemned to roll his boulder eternally, this plugin ensures your 
 
 ---
 
+## 🚀 Quick Install
+
+### For Humans (Recommended)
+
+Just tell your AI assistant:
+
+> **"Install oh-my-claudecode-opencode by following these instructions: https://raw.githubusercontent.com/devswha/oh-my-claudecode-opencode/main/docs/guide/installation.md"**
+
+That's it. The AI will handle the rest.
+
+### One-liner (If you insist on doing it yourself)
+
+```bash
+mkdir -p ~/.opencode/plugins && cd ~/.opencode && npm install oh-my-claudecode-opencode@latest && echo 'import OmoOmcsPlugin from "oh-my-claudecode-opencode";
+export default OmoOmcsPlugin;' > plugins/omco.ts && echo "✅ Restart OpenCode to activate OMCO"
+```
+
+### Magic Keywords
+
+Once installed, just include these keywords in your prompts:
+
+| Keyword | Effect |
+|---------|--------|
+| `ultrawork` or `ulw` | Maximum intensity parallel execution |
+| `ralph` | Persistence mode - won't stop until complete |
+| `autopilot` | Full autonomous execution |
+
+Example: `ulw implement user authentication with tests`
+
+---
+
 ## 🎯 What is this?
 
 This project **ports the powerful features** of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) v3.3.6 (a Claude Code plugin) to the **OpenCode platform**.
@@ -67,24 +98,26 @@ This project **ports the powerful features** of [oh-my-claudecode](https://githu
 
 ## Installation
 
+> 💡 **Recommended**: Let your AI handle it! See [Quick Install](#-quick-install) above.
+
+### Manual Installation
+
 ```bash
-# Using npm
+# Install in OpenCode home directory
+cd ~/.opencode
 npm install oh-my-claudecode-opencode
 
-# Using bun
-bun add oh-my-claudecode-opencode
+# Create plugin loader
+mkdir -p plugins
+cat > plugins/omco.ts << 'EOF'
+import OmoOmcsPlugin from "oh-my-claudecode-opencode";
+export default OmoOmcsPlugin;
+EOF
 
-# Using pnpm
-pnpm add oh-my-claudecode-opencode
+# Restart OpenCode to activate
 ```
 
-Then add to your OpenCode configuration:
-
-```json
-{
-  "plugins": ["oh-my-claudecode-opencode"]
-}
-```
+For detailed instructions, see [Installation Guide](docs/guide/installation.md).
 
 ## Usage
 
