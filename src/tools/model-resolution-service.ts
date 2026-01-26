@@ -52,6 +52,17 @@ export interface ModelResolutionService {
    * Check if tier mapping is configured (tierDefaults has provider/model format)
    */
   isTierMappingConfigured(): boolean;
+
+  /**
+   * Resolve model for a category-based tier (abstract tier name)
+   * @param categoryTier - Abstract tier name (haiku, sonnet, opus)
+   * @param fallbackModel - Parent session model to use if resolution fails
+   * @returns Resolved ModelConfig or undefined if no mapping found
+   */
+  resolveModelForCategory(
+    categoryTier: string,
+    fallbackModel?: ModelConfig
+  ): ModelConfig | undefined;
 }
 
 /**
@@ -176,9 +187,40 @@ export function createModelResolutionService(
     return hasConfiguredTiers;
   };
 
+  const resolveModelForCategory = (
+    categoryTier: string,
+    fallbackModel?: ModelConfig
+  ): ModelConfig | undefined => {
+    // Get the tier mapping from tierDefaults
+    const tierDefaults = resolver.getTierDefaults();
+    const mappedModel = tierDefaults[categoryTier as ModelTier];
+
+    // Try to parse the mapped model to provider/model format
+    if (mappedModel) {
+      const modelConfig = parseModelString(mappedModel);
+
+      if (modelConfig) {
+        if (debugLogging) {
+          log(`[model-resolution] Resolved category tier "${categoryTier}": ${mappedModel}`);
+        }
+        return modelConfig;
+      }
+    }
+
+    // No valid mapping found, use fallback
+    if (debugLogging) {
+      log(`[model-resolution] No mapping for category tier "${categoryTier}", using fallback`, {
+        fallback: fallbackModel ? `${fallbackModel.providerID}/${fallbackModel.modelID}` : "none",
+      });
+    }
+
+    return fallbackModel;
+  };
+
   return {
     resolveModelForAgent,
     resolveModelForAgentOrThrow,
     isTierMappingConfigured,
+    resolveModelForCategory,
   };
 }

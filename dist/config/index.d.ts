@@ -96,6 +96,32 @@ declare const AutopilotConfigSchema: z.ZodObject<{
         off: "off";
     }>>;
 }, z.core.$strip>;
+export declare const CategoryConfigSchema: z.ZodObject<{
+    model: z.ZodOptional<z.ZodString>;
+    variant: z.ZodOptional<z.ZodEnum<{
+        low: "low";
+        medium: "medium";
+        high: "high";
+        max: "max";
+        xhigh: "xhigh";
+    }>>;
+    description: z.ZodOptional<z.ZodString>;
+    prompt_append: z.ZodOptional<z.ZodString>;
+    is_unstable_agent: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const CategoriesConfigSchema: z.ZodRecord<z.ZodString, z.ZodObject<{
+    model: z.ZodOptional<z.ZodString>;
+    variant: z.ZodOptional<z.ZodEnum<{
+        low: "low";
+        medium: "medium";
+        high: "high";
+        max: "max";
+        xhigh: "xhigh";
+    }>>;
+    description: z.ZodOptional<z.ZodString>;
+    prompt_append: z.ZodOptional<z.ZodString>;
+    is_unstable_agent: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strip>>;
 declare const UltraQAConfigSchema: z.ZodObject<{
     enabled: z.ZodOptional<z.ZodBoolean>;
     maxIterations: z.ZodOptional<z.ZodNumber>;
@@ -274,6 +300,19 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
         toastDuration: z.ZodOptional<z.ZodNumber>;
         trackMetrics: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
+    categories: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+        model: z.ZodOptional<z.ZodString>;
+        variant: z.ZodOptional<z.ZodEnum<{
+            low: "low";
+            medium: "medium";
+            high: "high";
+            max: "max";
+            xhigh: "xhigh";
+        }>>;
+        description: z.ZodOptional<z.ZodString>;
+        prompt_append: z.ZodOptional<z.ZodString>;
+        is_unstable_agent: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$strip>>>;
     omco_agent: z.ZodOptional<z.ZodObject<{
         disabled: z.ZodOptional<z.ZodBoolean>;
         planner_enabled: z.ZodOptional<z.ZodBoolean>;
@@ -296,6 +335,8 @@ export type McpServersConfig = z.infer<typeof McpServersConfigSchema>;
 export type PermissionsConfig = z.infer<typeof PermissionsConfigSchema>;
 export type MagicKeywordsConfig = z.infer<typeof MagicKeywordsConfigSchema>;
 export type RoutingConfig = z.infer<typeof RoutingConfigSchema>;
+export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
+export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>;
 export type HookName = "todo-continuation-enforcer" | "keyword-detector" | "ralph-loop" | "session-recovery" | "agent-usage-reminder" | "context-window-monitor" | "comment-checker" | "tool-output-truncator" | "system-prompt-injector" | "persistent-mode" | "remember-tag-processor" | "autopilot" | "ultraqa-loop" | "context-recovery" | "edit-error-recovery" | "omc-orchestrator";
 export type AgentName = "omc" | "architect" | "researcher" | "explore" | "frontendEngineer" | "documentWriter" | "multimodalLooker" | "critic" | "analyst" | "planner" | "oracle" | "librarian" | "frontend-ui-ux-engineer" | "document-writer" | "multimodal-looker";
 export declare function loadConfig(directory: string): OmoOmcsConfig;

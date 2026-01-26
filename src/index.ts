@@ -35,7 +35,7 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
 
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task, modelService);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
-  const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService);
+  const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService, pluginConfig.categories);
 
   // Create system prompt injector for mode tracking
   const systemPromptInjector = createSystemPromptInjector(ctx);

@@ -20592,6 +20592,14 @@ var AutopilotConfigSchema = exports_external.object({
   maxPhaseRetries: exports_external.number().min(1).max(10).optional(),
   delegationEnforcement: exports_external.enum(["strict", "warn", "off"]).optional()
 });
+var CategoryConfigSchema = exports_external.object({
+  model: exports_external.string().optional(),
+  variant: exports_external.enum(["low", "medium", "high", "max", "xhigh"]).optional(),
+  description: exports_external.string().optional(),
+  prompt_append: exports_external.string().optional(),
+  is_unstable_agent: exports_external.boolean().optional()
+});
+var CategoriesConfigSchema = exports_external.record(exports_external.string(), CategoryConfigSchema);
 var UltraQAConfigSchema = exports_external.object({
   enabled: exports_external.boolean().optional(),
   maxIterations: exports_external.number().min(1).max(100).optional(),
@@ -20644,6 +20652,7 @@ var OmoOmcsConfigSchema = exports_external.object({
   context_recovery: ContextRecoveryConfigSchema.optional(),
   edit_error_recovery: EditErrorRecoveryConfigSchema.optional(),
   tui_status: TuiStatusConfigSchema.optional(),
+  categories: CategoriesConfigSchema.optional(),
   omco_agent: exports_external.object({
     disabled: exports_external.boolean().optional(),
     planner_enabled: exports_external.boolean().optional(),
@@ -20765,7 +20774,8 @@ function loadConfig(directory) {
     },
     omco_agent: {
       disabled: false
-    }
+    },
+    categories: {}
   };
 }
 
@@ -34517,13 +34527,242 @@ Use \`background_output\` to get results. Prompts MUST be in English.`,
   };
 }
 
+// src/categories/constants.ts
+var VISUAL_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on VISUAL/UI tasks.
+
+Design-first mindset:
+- Bold aesthetic choices over safe defaults
+- Unexpected layouts, asymmetry, grid-breaking elements
+- Distinctive typography (avoid: Arial, Inter, Roboto, Space Grotesk)
+- Cohesive color palettes with sharp accents
+- High-impact animations with staggered reveals
+- Atmosphere: gradient meshes, noise textures, layered transparencies
+
+AVOID: Generic fonts, purple gradients on white, predictable layouts, cookie-cutter patterns.
+</Category_Context>`;
+var ULTRABRAIN_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on COMPLEX ARCHITECTURE / DEEP REASONING tasks.
+
+Strategic advisor mindset:
+- Bias toward simplicity: least complex solution that fulfills requirements
+- Leverage existing code/patterns over new components
+- Prioritize developer experience and maintainability
+- One clear recommendation with effort estimate (Quick/Short/Medium/Large)
+- Signal when advanced approach warranted
+
+Response format:
+- Bottom line (2-3 sentences)
+- Action plan (numbered steps)
+- Risks and mitigations (if relevant)
+</Category_Context>`;
+var ARTISTRY_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on HIGHLY CREATIVE / ARTISTIC tasks.
+
+Artistic genius mindset:
+- Push far beyond conventional boundaries
+- Explore radical, unconventional directions
+- Surprise and delight: unexpected twists, novel combinations
+- Rich detail and vivid expression
+- Break patterns deliberately when it serves the creative vision
+
+Approach:
+- Generate diverse, bold options first
+- Embrace ambiguity and wild experimentation
+- Balance novelty with coherence
+- This is for tasks requiring exceptional creativity
+</Category_Context>`;
+var QUICK_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on SMALL / QUICK tasks.
+
+Efficient execution mindset:
+- Fast, focused, minimal overhead
+- Get to the point immediately
+- No over-engineering
+- Simple solutions for simple problems
+
+Approach:
+- Minimal viable implementation
+- Skip unnecessary abstractions
+- Direct and concise
+</Category_Context>
+
+<Caller_Warning>
+THIS CATEGORY USES A LESS CAPABLE MODEL (haiku tier).
+
+The model executing this task has LIMITED reasoning capacity. Your prompt MUST be:
+
+**EXHAUSTIVELY EXPLICIT** - Leave NOTHING to interpretation:
+1. MUST DO: List every required action as atomic, numbered steps
+2. MUST NOT DO: Explicitly forbid likely mistakes and deviations
+3. EXPECTED OUTPUT: Describe exact success criteria with concrete examples
+
+**WHY THIS MATTERS:**
+- Less capable models WILL deviate without explicit guardrails
+- Vague instructions \u2192 unpredictable results
+- Implicit expectations \u2192 missed requirements
+
+**PROMPT STRUCTURE (MANDATORY):**
+\`\`\`
+TASK: [One-sentence goal]
+
+MUST DO:
+1. [Specific action with exact details]
+2. [Another specific action]
+...
+
+MUST NOT DO:
+- [Forbidden action + why]
+- [Another forbidden action]
+...
+
+EXPECTED OUTPUT:
+- [Exact deliverable description]
+- [Success criteria / verification method]
+\`\`\`
+
+If your prompt lacks this structure, REWRITE IT before delegating.
+</Caller_Warning>`;
+var UNSPECIFIED_LOW_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on tasks that don't fit specific categories but require moderate effort.
+
+<Selection_Gate>
+BEFORE selecting this category, VERIFY ALL conditions:
+1. Task does NOT fit: quick (trivial), visual-engineering (UI), ultrabrain (deep logic), artistry (creative), writing (docs)
+2. Task requires more than trivial effort but is NOT system-wide
+3. Scope is contained within a few files/modules
+
+If task fits ANY other category, DO NOT select unspecified-low.
+This is NOT a default choice - it's for genuinely unclassifiable moderate-effort work.
+</Selection_Gate>
+</Category_Context>
+
+<Caller_Warning>
+THIS CATEGORY USES A MID-TIER MODEL (sonnet tier).
+
+**PROVIDE CLEAR STRUCTURE:**
+1. MUST DO: Enumerate required actions explicitly
+2. MUST NOT DO: State forbidden actions to prevent scope creep
+3. EXPECTED OUTPUT: Define concrete success criteria
+</Caller_Warning>`;
+var UNSPECIFIED_HIGH_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on tasks that don't fit specific categories but require substantial effort.
+
+<Selection_Gate>
+BEFORE selecting this category, VERIFY ALL conditions:
+1. Task does NOT fit: quick (trivial), visual-engineering (UI), ultrabrain (deep logic), artistry (creative), writing (docs)
+2. Task requires substantial effort across multiple systems/modules
+3. Changes have broad impact or require careful coordination
+4. NOT just "complex" - must be genuinely unclassifiable AND high-effort
+
+If task fits ANY other category, DO NOT select unspecified-high.
+If task is unclassifiable but moderate-effort, use unspecified-low instead.
+</Selection_Gate>
+</Category_Context>`;
+var WRITING_CATEGORY_PROMPT_APPEND = `<Category_Context>
+You are working on WRITING / PROSE tasks.
+
+Wordsmith mindset:
+- Clear, flowing prose
+- Appropriate tone and voice
+- Engaging and readable
+- Proper structure and organization
+
+Approach:
+- Understand the audience
+- Draft with care
+- Polish for clarity and impact
+- Documentation, READMEs, articles, technical writing
+</Category_Context>`;
+var DEFAULT_CATEGORIES = {
+  "visual-engineering": {
+    model: "opus",
+    description: "Frontend, UI/UX, design, styling, animation"
+  },
+  ultrabrain: {
+    model: "opus",
+    variant: "high",
+    description: "Deep logical reasoning, complex architecture decisions requiring extensive analysis"
+  },
+  artistry: {
+    model: "opus",
+    variant: "max",
+    description: "Highly creative/artistic tasks, novel ideas"
+  },
+  quick: {
+    model: "haiku",
+    description: "Trivial tasks - single file changes, typo fixes, simple modifications"
+  },
+  "unspecified-low": {
+    model: "sonnet",
+    description: "Tasks that don't fit other categories, moderate effort required"
+  },
+  "unspecified-high": {
+    model: "opus",
+    variant: "max",
+    description: "Tasks that don't fit other categories, high effort required"
+  },
+  writing: {
+    model: "sonnet",
+    description: "Documentation, prose, technical writing"
+  }
+};
+var CATEGORY_PROMPT_APPENDS = {
+  "visual-engineering": VISUAL_CATEGORY_PROMPT_APPEND,
+  ultrabrain: ULTRABRAIN_CATEGORY_PROMPT_APPEND,
+  artistry: ARTISTRY_CATEGORY_PROMPT_APPEND,
+  quick: QUICK_CATEGORY_PROMPT_APPEND,
+  "unspecified-low": UNSPECIFIED_LOW_CATEGORY_PROMPT_APPEND,
+  "unspecified-high": UNSPECIFIED_HIGH_CATEGORY_PROMPT_APPEND,
+  writing: WRITING_CATEGORY_PROMPT_APPEND
+};
+var CATEGORY_DESCRIPTIONS = {
+  "visual-engineering": "Frontend, UI/UX, design, styling, animation",
+  ultrabrain: "Deep logical reasoning, complex architecture decisions requiring extensive analysis",
+  artistry: "Highly creative/artistic tasks, novel ideas",
+  quick: "Trivial tasks - single file changes, typo fixes, simple modifications",
+  "unspecified-low": "Tasks that don't fit other categories, moderate effort required",
+  "unspecified-high": "Tasks that don't fit other categories, high effort required",
+  writing: "Documentation, prose, technical writing"
+};
+// src/categories/resolver.ts
+function resolveCategoryConfig(categoryName, userCategories) {
+  const defaultConfig = DEFAULT_CATEGORIES[categoryName];
+  const userConfig = userCategories?.[categoryName];
+  const defaultPromptAppend = CATEGORY_PROMPT_APPENDS[categoryName] ?? "";
+  if (!defaultConfig && !userConfig) {
+    return null;
+  }
+  const config3 = {
+    ...defaultConfig,
+    ...userConfig
+  };
+  const tier = config3.model ?? "sonnet";
+  let promptAppend = defaultPromptAppend;
+  if (userConfig?.prompt_append) {
+    promptAppend = defaultPromptAppend ? defaultPromptAppend + `
+
+` + userConfig.prompt_append : userConfig.prompt_append;
+  }
+  return { config: config3, promptAppend, tier };
+}
+function getAvailableCategories(userCategories) {
+  const allCategories = { ...DEFAULT_CATEGORIES, ...userCategories };
+  return Object.keys(allCategories);
+}
 // src/tools/call-omco-agent.ts
-function createCallOmcoAgent(ctx, manager, modelService) {
+function createCallOmcoAgent(ctx, manager, modelService, userCategories) {
   const agentNames = listAgentNames();
   const agentList = agentNames.map((name) => {
     const agent = getAgent(name);
     const aliasNote = isAlias(name) ? ` (alias for ${getCanonicalName(name)})` : "";
     return `- ${name}${aliasNote}: ${agent?.description || "Agent"}`;
+  }).join(`
+`);
+  const categoryNames = getAvailableCategories(userCategories);
+  const categoryList = categoryNames.map((name) => {
+    const desc = CATEGORY_DESCRIPTIONS[name] || userCategories?.[name]?.description || "Category";
+    return `- ${name}: ${desc}`;
   }).join(`
 `);
   return tool({
@@ -34532,38 +34771,109 @@ function createCallOmcoAgent(ctx, manager, modelService) {
 Available agents:
 ${agentList}
 
+Available categories:
+${categoryList}
+
 Prompts MUST be in English. Use \`background_output\` for async results.`,
     args: {
       description: tool.schema.string().describe("Short description of task"),
       prompt: tool.schema.string().describe("Task prompt"),
-      subagent_type: tool.schema.string().describe(`Agent type to spawn. Available: ${agentNames.join(", ")}`),
+      subagent_type: tool.schema.string().optional().describe(`Agent type to spawn. Available: ${agentNames.join(", ")}`),
+      category: tool.schema.string().optional().describe(`Category for delegation (e.g., 'quick', 'visual-engineering', 'ultrabrain'). Mutually exclusive with subagent_type.`),
       run_in_background: tool.schema.boolean().describe("Run async (true) or sync (false)"),
       session_id: tool.schema.string().optional().describe("Existing session to continue")
     },
     async execute(args, context) {
-      const { description, prompt, subagent_type, run_in_background } = args;
-      const agent = getAgent(subagent_type);
-      if (!agent) {
+      const { description, prompt, subagent_type, category, run_in_background } = args;
+      if (subagent_type && category) {
         return JSON.stringify({
           status: "failed",
-          error: `Unknown agent type: ${subagent_type}. Available: ${listAgentNames().join(", ")}`
+          error: "subagent_type and category are mutually exclusive. Provide only one."
         });
       }
-      const enhancedPrompt = `${agent.systemPrompt}
+      if (!subagent_type && !category) {
+        return JSON.stringify({
+          status: "failed",
+          error: "Either subagent_type or category must be provided."
+        });
+      }
+      let enhancedPrompt;
+      let tierForResolution;
+      let agentTypeForLogging;
+      if (category) {
+        const resolved = resolveCategoryConfig(category, userCategories);
+        if (!resolved) {
+          return JSON.stringify({
+            status: "failed",
+            error: `Unknown category: ${category}. Available: ${getAvailableCategories(userCategories).join(", ")}`
+          });
+        }
+        enhancedPrompt = resolved.promptAppend ? `${resolved.promptAppend}
+
+---
+
+${prompt}` : prompt;
+        tierForResolution = resolved.tier;
+        agentTypeForLogging = `category:${category}`;
+        log(`[call-omco-agent] Using category delegation`, { category, tier: tierForResolution });
+      } else {
+        const agent = getAgent(subagent_type);
+        if (!agent) {
+          return JSON.stringify({
+            status: "failed",
+            error: `Unknown agent type: ${subagent_type}. Available: ${listAgentNames().join(", ")}`
+          });
+        }
+        enhancedPrompt = `${agent.systemPrompt}
 
 ---
 
 ${prompt}`;
+        agentTypeForLogging = subagent_type;
+      }
       const parentModel = await manager.getParentSessionModel(context.sessionID);
       let resolvedModel = parentModel;
       if (modelService) {
         try {
-          resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
-          if (resolvedModel && resolvedModel !== parentModel) {
-            log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
-              providerID: resolvedModel.providerID,
-              modelID: resolvedModel.modelID
-            });
+          if (category && tierForResolution) {
+            const categoryModel = modelService.resolveModelForCategory(tierForResolution, parentModel);
+            if (categoryModel) {
+              resolvedModel = categoryModel;
+              if (resolvedModel && resolvedModel !== parentModel) {
+                log(`[call-omco-agent] Using tier-mapped model for category ${category}`, {
+                  tier: tierForResolution,
+                  providerID: resolvedModel.providerID,
+                  modelID: resolvedModel.modelID
+                });
+              }
+            } else if (!parentModel) {
+              const errorMsg = `[OMCO] Cannot resolve model for category "${category}" (tier: ${tierForResolution}).
+
+` + `No tier mapping configured. Run one of:
+` + `  1. npx omco-setup (interactive setup)
+` + `  2. Add tierDefaults to ~/.config/opencode/omco.json:
+` + `     {
+` + `       "model_mapping": {
+` + `         "tierDefaults": {
+` + `           "haiku": "openai/gpt-4o-mini",
+` + `           "sonnet": "openai/gpt-4o",
+` + `           "opus": "openai/o1"
+` + `         }
+` + `       }
+` + `     }`;
+              return JSON.stringify({
+                status: "failed",
+                error: errorMsg
+              });
+            }
+          } else if (subagent_type) {
+            resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
+            if (resolvedModel && resolvedModel !== parentModel) {
+              log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
+                providerID: resolvedModel.providerID,
+                modelID: resolvedModel.modelID
+              });
+            }
           }
         } catch (err) {
           return JSON.stringify({
@@ -34573,7 +34883,7 @@ ${prompt}`;
         }
       }
       if (run_in_background) {
-        const task = await manager.createTask(context.sessionID, description, enhancedPrompt, subagent_type, resolvedModel);
+        const task = await manager.createTask(context.sessionID, description, enhancedPrompt, agentTypeForLogging, resolvedModel);
         return JSON.stringify({
           task_id: task.id,
           session_id: task.sessionID,
@@ -34585,7 +34895,7 @@ ${prompt}`;
         const sessionResp = await ctx.client.session.create({
           body: {
             parentID: context.sessionID,
-            title: `${subagent_type}: ${description}`
+            title: `${agentTypeForLogging}: ${description}`
           },
           query: { directory: ctx.directory }
         });
@@ -34597,7 +34907,7 @@ ${prompt}`;
         };
         if (resolvedModel) {
           promptBody.model = resolvedModel;
-          log(`Using resolved model for sync agent call`, { subagent_type, ...resolvedModel });
+          log(`Using resolved model for sync agent call`, { agentType: agentTypeForLogging, ...resolvedModel });
         }
         let promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
@@ -34821,10 +35131,30 @@ Tier mapping is configured but no fallback model available.
   const isTierMappingConfigured = () => {
     return hasConfiguredTiers;
   };
+  const resolveModelForCategory = (categoryTier, fallbackModel) => {
+    const tierDefaults2 = resolver.getTierDefaults();
+    const mappedModel = tierDefaults2[categoryTier];
+    if (mappedModel) {
+      const modelConfig = parseModelString(mappedModel);
+      if (modelConfig) {
+        if (debugLogging) {
+          log(`[model-resolution] Resolved category tier "${categoryTier}": ${mappedModel}`);
+        }
+        return modelConfig;
+      }
+    }
+    if (debugLogging) {
+      log(`[model-resolution] No mapping for category tier "${categoryTier}", using fallback`, {
+        fallback: fallbackModel ? `${fallbackModel.providerID}/${fallbackModel.modelID}` : "none"
+      });
+    }
+    return fallbackModel;
+  };
   return {
     resolveModelForAgent,
     resolveModelForAgentOrThrow,
-    isTierMappingConfigured
+    isTierMappingConfigured,
+    resolveModelForCategory
   };
 }
 
@@ -38719,7 +39049,7 @@ var OmoOmcsPlugin = async (ctx) => {
   }
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task, modelService);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
-  const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService);
+  const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService, pluginConfig.categories);
   const systemPromptInjector = createSystemPromptInjector(ctx);
   const skillInjector = createSkillInjector(ctx);
   const ralphLoop = createRalphLoopHook(ctx, {

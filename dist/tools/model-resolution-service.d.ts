@@ -39,6 +39,13 @@ export interface ModelResolutionService {
      * Check if tier mapping is configured (tierDefaults has provider/model format)
      */
     isTierMappingConfigured(): boolean;
+    /**
+     * Resolve model for a category-based tier (abstract tier name)
+     * @param categoryTier - Abstract tier name (haiku, sonnet, opus)
+     * @param fallbackModel - Parent session model to use if resolution fails
+     * @returns Resolved ModelConfig or undefined if no mapping found
+     */
+    resolveModelForCategory(categoryTier: string, fallbackModel?: ModelConfig): ModelConfig | undefined;
 }
 /**
  * Create a ModelResolutionService instance

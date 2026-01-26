@@ -96,6 +96,16 @@ const AutopilotConfigSchema = z.object({
   delegationEnforcement: z.enum(['strict', 'warn', 'off']).optional(),
 });
 
+export const CategoryConfigSchema = z.object({
+  model: z.string().optional(),
+  variant: z.enum(["low", "medium", "high", "max", "xhigh"]).optional(),
+  description: z.string().optional(),
+  prompt_append: z.string().optional(),
+  is_unstable_agent: z.boolean().optional(),
+});
+
+export const CategoriesConfigSchema = z.record(z.string(), CategoryConfigSchema);
+
 const UltraQAConfigSchema = z.object({
   enabled: z.boolean().optional(),
   maxIterations: z.number().min(1).max(100).optional(),
@@ -156,6 +166,7 @@ const OmoOmcsConfigSchema = z.object({
   context_recovery: ContextRecoveryConfigSchema.optional(),
   edit_error_recovery: EditErrorRecoveryConfigSchema.optional(),
   tui_status: TuiStatusConfigSchema.optional(),
+  categories: CategoriesConfigSchema.optional(),
   omco_agent: z.object({
     disabled: z.boolean().optional(),
     planner_enabled: z.boolean().optional(),
@@ -179,6 +190,8 @@ export type McpServersConfig = z.infer<typeof McpServersConfigSchema>;
 export type PermissionsConfig = z.infer<typeof PermissionsConfigSchema>;
 export type MagicKeywordsConfig = z.infer<typeof MagicKeywordsConfigSchema>;
 export type RoutingConfig = z.infer<typeof RoutingConfigSchema>;
+export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
+export type CategoriesConfig = z.infer<typeof CategoriesConfigSchema>;
 
 export type HookName =
   | "todo-continuation-enforcer"
@@ -324,5 +337,6 @@ export function loadConfig(directory: string): OmoOmcsConfig {
     omco_agent: {
       disabled: false,
     },
+    categories: {},
   };
 }
