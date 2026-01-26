@@ -1,13 +1,18 @@
 {
   "name": "oh-my-claudecode-opencode",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "OpenCode port of oh-my-claudecode - Multi-agent orchestration plugin (omco)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "bin": {
+    "omco-doctor": "./bin/doctor.js",
+    "oh-my-claudecode-opencode": "./bin/doctor.js"
+  },
   "files": [
     "dist",
-    "assets"
+    "assets",
+    "bin"
   ],
   "exports": {
     ".": {
@@ -17,7 +22,7 @@
     "./schema.json": "./assets/omco.schema.json"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
+    "build": "bun build src/index.ts --outdir dist --target bun --format esm && bun build bin/doctor.ts --outfile bin/doctor.js --target node --format esm && tsc --emitDeclarationOnly",
     "build:watch": "bun build src/index.ts --outdir dist --target bun --format esm --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run clean && bun run build",

@@ -274,7 +274,7 @@ declare const OmoOmcsConfigSchema: z.ZodObject<{
         toastDuration: z.ZodOptional<z.ZodNumber>;
         trackMetrics: z.ZodOptional<z.ZodBoolean>;
     }, z.core.$strip>>;
-    sisyphus_agent: z.ZodOptional<z.ZodObject<{
+    omco_agent: z.ZodOptional<z.ZodObject<{
         disabled: z.ZodOptional<z.ZodBoolean>;
         planner_enabled: z.ZodOptional<z.ZodBoolean>;
         replace_plan: z.ZodOptional<z.ZodBoolean>;

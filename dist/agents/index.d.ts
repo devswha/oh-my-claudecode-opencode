@@ -17,6 +17,10 @@
  * - critic (was: momus) - Plan review (Opus)
  * - vision - Visual/media analysis (Sonnet)
  * - scientist - Data analysis and research execution (New in v3.3.6)
+ *
+ * Dynamic Loading (v3.4.0):
+ * Agents are loaded from assets/agents/*.md files at runtime.
+ * Hardcoded definitions below serve as fallback.
  */
 export interface AgentDefinition {
     name: string;
@@ -122,7 +126,8 @@ export declare const scientistHighAgent: AgentDefinition;
  * Coordinator (Opus) - Master Orchestrator for complex multi-step tasks
  */
 export declare const coordinatorAgent: AgentDefinition;
-export declare const agents: Record<string, AgentDefinition>;
+declare let agents: Record<string, AgentDefinition>;
+export { agents };
 export declare function getAgent(name: string): AgentDefinition | undefined;
 export declare function listAgents(): AgentDefinition[];
 /**
@@ -137,3 +142,11 @@ export declare function isAlias(name: string): boolean;
  * Get the canonical (new) name for an agent
  */
 export declare function getCanonicalName(name: string): string;
+/**
+ * Force reload agents from disk (useful for hot-reloading during development)
+ */
+export declare function reloadAgents(): Promise<void>;
+/**
+ * Get the list of primary (non-alias) agent names
+ */
+export declare function getPrimaryAgentNames(): string[];

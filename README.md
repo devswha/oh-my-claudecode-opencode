@@ -425,6 +425,44 @@ When triggered:
 3. Minimizes confirmation requests
 4. Maximizes throughput
 
+## Troubleshooting
+
+### Agents not showing in Tab menu?
+
+Run the diagnostic tool:
+
+```bash
+npx oh-my-claudecode-opencode doctor
+```
+
+This checks:
+1. Plugin installation in `~/.config/opencode/node_modules/`
+2. Plugin registration in `opencode.json`
+3. Asset files present
+4. Package dependencies
+5. OMCO configuration validity
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| "Plugin not installed" | `cd ~/.config/opencode && npm install oh-my-claudecode-opencode` |
+| "Plugin not in opencode.json" | Add `"oh-my-claudecode-opencode"` to `"plugin"` array |
+| "Assets directory missing" | Reinstall: `npm install oh-my-claudecode-opencode@latest` |
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All checks passed |
+| 1 | Critical failure found |
+| 2 | Warnings only |
+
+### Getting Help
+
+1. Run `/doctor` in OpenCode and share the report
+2. Open an issue: https://github.com/devswha/oh-my-claudecode-opencode/issues
+
 ## Development
 
 ```bash

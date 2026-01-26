@@ -1,192 +1,88 @@
 ---
 name: doctor
-description: Diagnose and fix oh-my-claudecode installation issues
+description: Diagnose and fix OMCO installation issues for OpenCode
 user-invocable: true
 ---
 
-# Doctor Skill
+# Doctor Skill (OpenCode)
 
-## Task: Run Installation Diagnostics
+## Quick Diagnosis
 
-You are the OMC Doctor - diagnose and fix installation issues.
-
-### Step 1: Check Plugin Version
+When users report "OMCO agent not showing in Tab menu" or similar issues, guide them to run:
 
 ```bash
-# Get installed version
-INSTALLED=$(ls ~/.claude/plugins/cache/omc/oh-my-claudecode/ 2>/dev/null | sort -V | tail -1)
-echo "Installed: $INSTALLED"
-
-# Get latest from npm
-LATEST=$(npm view oh-my-claudecode version 2>/dev/null)
-echo "Latest: $LATEST"
+npx oh-my-claudecode-opencode doctor
 ```
 
-**Diagnosis**:
-- If no version installed: CRITICAL - plugin not installed
-- If INSTALLED != LATEST: WARN - outdated plugin
-- If multiple versions exist: WARN - stale cache
-
-### Step 2: Check for Legacy Hooks in settings.json
-
-Read `~/.claude/settings.json` and check if there's a `"hooks"` key with entries like:
-- `bash $HOME/.claude/hooks/keyword-detector.sh`
-- `bash $HOME/.claude/hooks/persistent-mode.sh`
-- `bash $HOME/.claude/hooks/session-start.sh`
-
-**Diagnosis**:
-- If found: CRITICAL - legacy hooks causing duplicates
-
-### Step 3: Check for Legacy Bash Hook Scripts
-
+Or if npx is not available:
 ```bash
-ls -la ~/.claude/hooks/*.sh 2>/dev/null
+cd ~/.config/opencode && node node_modules/oh-my-claudecode-opencode/bin/doctor.js
 ```
 
-**Diagnosis**:
-- If `keyword-detector.sh`, `persistent-mode.sh`, `session-start.sh`, or `stop-continuation.sh` exist: WARN - legacy scripts (can cause confusion)
+## 5 Failure Modes
 
-### Step 4: Check CLAUDE.md
+The doctor tool checks for 5 common failure modes:
 
+| # | Check | What It Means |
+|---|-------|---------------|
+| 1 | Plugin Installed | Is the package in `~/.config/opencode/node_modules/`? |
+| 2 | Plugin in Config | Is it registered in `opencode.json` `plugin` array? |
+| 3 | Assets Present | Do `assets/agents/*.md` files exist? |
+| 4 | Package Dependency | Is it listed in `package.json` dependencies? |
+| 5 | OMCO Config Valid | Is `omco.json` valid JSON (if exists)? |
+
+## Report Analysis
+
+When a user pastes a diagnostic report (JSON or text), analyze it:
+
+1. **Identify failures**: Look for `FAIL` or `status: "FAIL"` entries
+2. **Check warnings**: Look for `WARN` entries
+3. **Extract recommendations**: The report includes fix commands
+
+## Interpreting Results
+
+### Exit Codes
+- **0**: All checks passed - plugin should work
+- **1**: Critical failure - plugin won't work until fixed
+- **2**: Warnings only - plugin may work but issues exist
+
+### Common Fixes
+
+**Plugin Not Installed (FAIL)**
 ```bash
-# Check if CLAUDE.md exists
-ls -la ~/.claude/CLAUDE.md 2>/dev/null
-
-# Check for OMC marker
-grep -q "oh-my-claudecode Multi-Agent System" ~/.claude/CLAUDE.md 2>/dev/null && echo "Has OMC config" || echo "Missing OMC config"
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode@latest
 ```
 
-**Diagnosis**:
-- If missing: CRITICAL - CLAUDE.md not configured
-- If missing OMC marker: WARN - outdated CLAUDE.md
-
-### Step 5: Check for Stale Plugin Cache
-
+**Plugin Not in Config (FAIL)**
 ```bash
-# Count versions in cache
-ls ~/.claude/plugins/cache/omc/oh-my-claudecode/ 2>/dev/null | wc -l
+# Create or edit ~/.config/opencode/opencode.json
+cat > ~/.config/opencode/opencode.json << 'EOF'
+{
+  "plugin": ["oh-my-claudecode-opencode"]
+}
+EOF
 ```
 
-**Diagnosis**:
-- If > 1 version: WARN - multiple cached versions (cleanup recommended)
-
-### Step 6: Check for Legacy Curl-Installed Content
-
-Check for legacy agents, commands, and skills installed via curl (before plugin system):
-
+**Assets Directory Missing (FAIL)**
 ```bash
-# Check for legacy agents directory
-ls -la ~/.claude/agents/ 2>/dev/null
-
-# Check for legacy commands directory
-ls -la ~/.claude/commands/ 2>/dev/null
-
-# Check for legacy skills directory
-ls -la ~/.claude/skills/ 2>/dev/null
+# Reinstall to get fresh assets
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode@latest --force
 ```
 
-**Diagnosis**:
-- If `~/.claude/agents/` exists with oh-my-claudecode-related files: WARN - legacy agents (now provided by plugin)
-- If `~/.claude/commands/` exists with oh-my-claudecode-related files: WARN - legacy commands (now provided by plugin)
-- If `~/.claude/skills/` exists with oh-my-claudecode-related files: WARN - legacy skills (now provided by plugin)
-
-Look for files like:
-- `architect.md`, `researcher.md`, `explore.md`, `executor.md`, etc. in agents/
-- `ultrawork.md`, `omc-default.md`, `omc-default-global.md`, `deepsearch.md`, etc. in commands/
-- Any oh-my-claudecode-related `.md` files in skills/
-
----
-
-## Report Format
-
-After running all checks, output a report:
-
-```
-## OMC Doctor Report
-
-### Summary
-[HEALTHY / ISSUES FOUND]
-
-### Checks
-
-| Check | Status | Details |
-|-------|--------|---------|
-| Plugin Version | OK/WARN/CRITICAL | ... |
-| Legacy Hooks (settings.json) | OK/CRITICAL | ... |
-| Legacy Scripts (~/.claude/hooks/) | OK/WARN | ... |
-| CLAUDE.md | OK/WARN/CRITICAL | ... |
-| Plugin Cache | OK/WARN | ... |
-| Legacy Agents (~/.claude/agents/) | OK/WARN | ... |
-| Legacy Commands (~/.claude/commands/) | OK/WARN | ... |
-| Legacy Skills (~/.claude/skills/) | OK/WARN | ... |
-
-### Issues Found
-1. [Issue description]
-2. [Issue description]
-
-### Recommended Fixes
-[List fixes based on issues]
-```
-
----
-
-## Auto-Fix (if user confirms)
-
-If issues found, ask user: "Would you like me to fix these issues automatically?"
-
-If yes, apply fixes:
-
-### Fix: Legacy Hooks in settings.json
-Remove the `"hooks"` section from `~/.claude/settings.json` (keep other settings intact)
-
-### Fix: Legacy Bash Scripts
+**Package Dependency Missing (WARN)**
 ```bash
-rm -f ~/.claude/hooks/keyword-detector.sh
-rm -f ~/.claude/hooks/persistent-mode.sh
-rm -f ~/.claude/hooks/session-start.sh
-rm -f ~/.claude/hooks/stop-continuation.sh
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode --save
 ```
 
-### Fix: Outdated Plugin
-```bash
-rm -rf ~/.claude/plugins/cache/oh-my-claudecode
-echo "Plugin cache cleared. Restart Claude Code to fetch latest version."
-```
+## After Fixes
 
-### Fix: Stale Cache (multiple versions)
-```bash
-# Keep only latest version
-cd ~/.claude/plugins/cache/omc/oh-my-claudecode/
-ls | sort -V | head -n -1 | xargs rm -rf
-```
+Always remind users to **restart OpenCode** after making fixes:
+- Close OpenCode (Ctrl+C)
+- Reopen OpenCode
 
-### Fix: Missing/Outdated CLAUDE.md
-Fetch latest from GitHub and write to `~/.claude/CLAUDE.md`:
-```
-WebFetch(url: "https://raw.githubusercontent.com/Yeachan-Heo/oh-my-claudecode/main/docs/CLAUDE.md", prompt: "Return the complete raw markdown content exactly as-is")
-```
+## Reporting Issues
 
-### Fix: Legacy Curl-Installed Content
-
-Remove legacy agents, commands, and skills directories (now provided by plugin):
-
-```bash
-# Backup first (optional - ask user)
-# mv ~/.claude/agents ~/.claude/agents.bak
-# mv ~/.claude/commands ~/.claude/commands.bak
-# mv ~/.claude/skills ~/.claude/skills.bak
-
-# Or remove directly
-rm -rf ~/.claude/agents
-rm -rf ~/.claude/commands
-rm -rf ~/.claude/skills
-```
-
-**Note**: Only remove if these contain oh-my-claudecode-related files. If user has custom agents/commands/skills, warn them and ask before removing.
-
----
-
-## Post-Fix
-
-After applying fixes, inform user:
-> Fixes applied. **Restart Claude Code** for changes to take effect.
+If the doctor tool doesn't identify the problem, ask users to:
+1. Share the full doctor report (JSON format preferred)
+2. Share their OpenCode version: `opencode --version`
+3. Open an issue: https://github.com/devswha/oh-my-claudecode-opencode/issues
