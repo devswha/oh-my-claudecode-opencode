@@ -91,7 +91,7 @@ describe.skipIf(!canRunLLMTests)("E2E: Hook Integration", () => {
     const collectPromise = new Promise<void>((resolve) => {
       const timeout = setTimeout(() => {
         // Explicitly close SSE stream on timeout to prevent resource leak
-        result.stream.return?.();
+        result.stream.return?.(undefined);
         resolve();
       }, 5000); // Collect for 5s
 
@@ -102,14 +102,14 @@ describe.skipIf(!canRunLLMTests)("E2E: Hook Integration", () => {
             if (collectedEvents.length >= 5) {
               clearTimeout(timeout);
               // Explicitly close SSE stream after collecting enough events
-              result.stream.return?.();
+              result.stream.return?.(undefined);
               resolve();
               return;
             }
           }
         } catch (err) {
           clearTimeout(timeout);
-          result.stream.return?.();
+          result.stream.return?.(undefined);
           resolve();
         }
       })();

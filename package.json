@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:e2e": "vitest run --config tests/e2e/vitest.config.ts",
-    "test:e2e:server": "vitest run --config tests/e2e/vitest.config.ts --grep 'Server'",
+    "test:e2e:server": "vitest run --config tests/e2e/vitest.config.ts --testNamePattern 'Server'",
     "test:all": "bun test && vitest run --config tests/e2e/vitest.config.ts",
     "lint": "eslint src --ext .ts"
   },

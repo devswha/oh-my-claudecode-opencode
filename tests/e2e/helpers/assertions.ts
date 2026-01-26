@@ -17,14 +17,34 @@ export function expectAgentRegistered(agents: Array<Agent>, agentName: string): 
  * Message = UserMessage | AssistantMessage
  * AssistantMessage has role: "assistant"
  * Parts include TextPart with { type: "text", text: string }
+ *
+ * Returns empty string if no text, or "[AUTH_ERROR]" if authentication failed.
  */
 export function getAssistantTextFromMessages(
   messages: Array<{ info: Message; parts: Array<Part> }> | undefined
 ): string {
   if (!messages) return "";
 
-  return messages
-    .filter(m => m.info.role === "assistant")
+  const assistantMessages = messages.filter(m => m.info.role === "assistant");
+
+  // Check for auth errors - these indicate environment issues, not test failures
+  for (const m of assistantMessages) {
+    const info = m.info as any;
+    if (info.error) {
+      const errorName = info.error.name;
+      const errorMsg = info.error.data?.message || "";
+      if (errorName === "ProviderAuthError" ||
+          errorMsg.includes("401") ||
+          errorMsg.includes("Token refresh failed") ||
+          errorMsg.includes("authentication") ||
+          errorMsg.includes("credentials")) {
+        console.warn(`[E2E] LLM authentication error: ${errorMsg}`);
+        return "[AUTH_ERROR]";
+      }
+    }
+  }
+
+  return assistantMessages
     .flatMap(m => m.parts)
     .filter((p): p is Extract<Part, { type: "text" }> => p.type === "text")
     .map(p => p.text)
