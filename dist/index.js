@@ -21672,6 +21672,7 @@ function generateTaskId() {
 function createBackgroundManager(ctx, config2) {
   const tasks = new Map;
   const defaultConcurrency = config2?.defaultConcurrency ?? 5;
+  const modelCache = new Map;
   const getRunningCount = (parentSessionID) => {
     let count = 0;
     for (const task of tasks.values()) {
@@ -21683,7 +21684,34 @@ function createBackgroundManager(ctx, config2) {
     }
     return count;
   };
-  const createTask = async (parentSessionID, description, prompt, agent) => {
+  const getParentSessionModel = async (parentSessionID) => {
+    if (modelCache.has(parentSessionID)) {
+      return modelCache.get(parentSessionID);
+    }
+    try {
+      const messagesResp = await ctx.client.session.messages({
+        path: { id: parentSessionID },
+        query: { directory: ctx.directory }
+      });
+      const messages = messagesResp.data;
+      const assistantMsg = messages?.find((m) => m.info.role === "assistant" && m.info.providerID && m.info.modelID);
+      if (assistantMsg?.info.providerID && assistantMsg?.info.modelID) {
+        const model = {
+          providerID: assistantMsg.info.providerID,
+          modelID: assistantMsg.info.modelID
+        };
+        modelCache.set(parentSessionID, model);
+        log(`Got parent session model from messages`, { parentSessionID, ...model });
+        return model;
+      }
+      log(`Parent session has no assistant messages with model info`, { parentSessionID });
+      return;
+    } catch (err) {
+      log(`Failed to get parent session model`, { parentSessionID, error: String(err) });
+      return;
+    }
+  };
+  const createTask = async (parentSessionID, description, prompt, agent, model) => {
     const runningCount = getRunningCount();
     if (runningCount >= defaultConcurrency) {
       throw new Error(`Max concurrent tasks (${defaultConcurrency}) reached. Wait for some to complete.`);
@@ -21698,6 +21726,7 @@ function createBackgroundManager(ctx, config2) {
     };
     tasks.set(taskId, task);
     log(`Background task created`, { taskId, description, agent });
+    const resolvedModel = model || await getParentSessionModel(parentSessionID);
     (async () => {
       try {
         const sessionResp = await ctx.client.session.create({
@@ -21717,11 +21746,16 @@ function createBackgroundManager(ctx, config2) {
         const fullPrompt = systemPrompt ? `${systemPrompt}
 
 ${prompt}` : prompt;
+        const promptBody = {
+          parts: [{ type: "text", text: fullPrompt }]
+        };
+        if (resolvedModel) {
+          promptBody.model = resolvedModel;
+          log(`Using parent model for subagent`, { taskId, ...resolvedModel });
+        }
         const promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
-          body: {
-            parts: [{ type: "text", text: fullPrompt }]
-          },
+          body: promptBody,
           query: { directory: ctx.directory }
         });
         const promptData = promptResp.data;
@@ -21828,7 +21862,8 @@ ${prompt}` : prompt;
     getTasksByParentSession,
     cancelTask,
     cancelAllTasks,
-    waitForTask
+    waitForTask,
+    getParentSessionModel
   };
 }
 
@@ -34257,8 +34292,9 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
 ---
 
 ${prompt}`;
+      const parentModel = await manager.getParentSessionModel(context.sessionID);
       if (run_in_background) {
-        const task = await manager.createTask(context.sessionID, description, enhancedPrompt, subagent_type);
+        const task = await manager.createTask(context.sessionID, description, enhancedPrompt, subagent_type, parentModel);
         return JSON.stringify({
           task_id: task.id,
           session_id: task.sessionID,
@@ -34277,11 +34313,16 @@ ${prompt}`;
         const sessionID = sessionResp.data?.id ?? sessionResp.id;
         if (!sessionID)
           throw new Error("Failed to create session");
+        const promptBody = {
+          parts: [{ type: "text", text: enhancedPrompt }]
+        };
+        if (parentModel) {
+          promptBody.model = parentModel;
+          log(`Using parent model for sync agent call`, { subagent_type, ...parentModel });
+        }
         const promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
-          body: {
-            parts: [{ type: "text", text: enhancedPrompt }]
-          },
+          body: promptBody,
           query: { directory: ctx.directory }
         });
         if (promptResp.error) {
@@ -34320,16 +34361,20 @@ ${prompt}`;
 
 // src/config/model-resolver.ts
 var HARDCODED_TIER_DEFAULTS = {
-  haiku: "github-copilot/claude-haiku-4",
-  sonnet: "github-copilot/claude-sonnet-4",
-  opus: "github-copilot/claude-opus-4"
+  haiku: "haiku",
+  sonnet: "sonnet",
+  opus: "opus"
 };
+var SIMPLE_TIER_NAMES = new Set(["haiku", "sonnet", "opus"]);
 function isValidModelFormat(model) {
+  if (SIMPLE_TIER_NAMES.has(model.toLowerCase())) {
+    return true;
+  }
   return /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(model);
 }
 function validateModelFormat(model, context) {
   if (!isValidModelFormat(model)) {
-    warn(`[model-resolver] [${context}] Model "${model}" does not follow "provider/model-name" format`);
+    warn(`[model-resolver] [${context}] Model "${model}" does not follow "provider/model-name" format. Configure model_mapping.tierDefaults in oh-my-opencode.json`);
   }
 }
 
@@ -38261,6 +38306,19 @@ function getAgentEmoji(agentName) {
   return emojiMap[agentName] || "\uD83E\uDD16";
 }
 
+// src/state/session-pause-state.ts
+var pauseStates = new Map;
+function isSessionPaused(sessionId) {
+  return pauseStates.get(sessionId)?.isPaused ?? false;
+}
+function resumeSession(sessionId) {
+  const state = pauseStates.get(sessionId);
+  if (state?.isPaused) {
+    log(`Session resumed`, { sessionId, wasPausedFor: Date.now() - (state.pausedAt ?? 0) });
+  }
+  pauseStates.delete(sessionId);
+}
+
 // src/index.ts
 var OmoOmcsPlugin = async (ctx) => {
   const pluginConfig = loadConfig(ctx.directory);
@@ -38366,6 +38424,10 @@ var OmoOmcsPlugin = async (ctx) => {
         systemPromptInjector.setSkillInjection(input.sessionID, skillInjection);
       } else {
         systemPromptInjector.clearSkillInjection(input.sessionID);
+      }
+      if (isSessionPaused(input.sessionID)) {
+        resumeSession(input.sessionID);
+        log("[session] Auto-resumed on user prompt", { sessionID: input.sessionID });
       }
       await autopilot["chat.message"](input, output);
       await ultraqaLoop["chat.message"](input, output);

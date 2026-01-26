@@ -22,13 +22,29 @@ export interface ModelResolutionResult {
     source: "per-agent-override" | "tier-default" | "hardcoded-fallback";
     originalTier?: ModelTier;
 }
+/**
+ * Default tier-to-model mapping.
+ * These use generic names - configure model_mapping.tierDefaults in
+ * ~/.config/opencode/oh-my-opencode.json for your specific provider.
+ *
+ * Example config:
+ * {
+ *   "model_mapping": {
+ *     "tierDefaults": {
+ *       "haiku": "google/gemini-2.0-flash",
+ *       "sonnet": "anthropic/claude-sonnet-4",
+ *       "opus": "anthropic/claude-opus-4"
+ *     }
+ *   }
+ * }
+ */
 export declare const HARDCODED_TIER_DEFAULTS: TierModelMapping;
 /**
- * Check if model follows "provider/model-name" pattern
+ * Check if model follows "provider/model-name" pattern or is a simple tier name
  */
 export declare function isValidModelFormat(model: string): boolean;
 /**
- * Log warning if invalid format
+ * Log warning if invalid format (skip for simple tier names)
  */
 export declare function validateModelFormat(model: string, context: string): void;
 export declare class ModelResolver {

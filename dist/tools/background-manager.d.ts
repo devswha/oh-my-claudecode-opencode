@@ -11,12 +11,17 @@ export interface BackgroundTask {
     startedAt: number;
     completedAt?: number;
 }
+export interface ModelConfig {
+    providerID: string;
+    modelID: string;
+}
 export interface BackgroundManager {
-    createTask: (parentSessionID: string, description: string, prompt: string, agent: string) => Promise<BackgroundTask>;
+    createTask: (parentSessionID: string, description: string, prompt: string, agent: string, model?: ModelConfig) => Promise<BackgroundTask>;
     getTask: (taskId: string) => BackgroundTask | undefined;
     getTasksByParentSession: (sessionID: string) => BackgroundTask[];
     cancelTask: (taskId: string) => boolean;
     cancelAllTasks: (parentSessionID?: string) => number;
     waitForTask: (taskId: string, timeoutMs?: number) => Promise<BackgroundTask>;
+    getParentSessionModel: (parentSessionID: string) => Promise<ModelConfig | undefined>;
 }
 export declare function createBackgroundManager(ctx: PluginInput, config?: BackgroundTaskConfig): BackgroundManager;
