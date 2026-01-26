@@ -20674,16 +20674,16 @@ function loadConfig(directory) {
   }
   return {
     agents: {
-      omc: { model: "github-copilot/claude-opus-4", enabled: true },
-      architect: { model: "github-copilot/claude-opus-4", enabled: true },
-      researcher: { model: "github-copilot/claude-sonnet-4", enabled: true },
-      explore: { model: "github-copilot/claude-haiku-4", enabled: true },
-      frontendEngineer: { model: "github-copilot/claude-sonnet-4", enabled: true },
-      documentWriter: { model: "github-copilot/claude-haiku-4", enabled: true },
-      multimodalLooker: { model: "github-copilot/claude-sonnet-4", enabled: true },
-      critic: { model: "github-copilot/claude-opus-4", enabled: true },
-      analyst: { model: "github-copilot/claude-opus-4", enabled: true },
-      planner: { model: "github-copilot/claude-opus-4", enabled: true }
+      omc: { tier: "opus", enabled: true },
+      architect: { tier: "opus", enabled: true },
+      researcher: { tier: "sonnet", enabled: true },
+      explore: { tier: "haiku", enabled: true },
+      frontendEngineer: { tier: "sonnet", enabled: true },
+      documentWriter: { tier: "haiku", enabled: true },
+      multimodalLooker: { tier: "sonnet", enabled: true },
+      critic: { tier: "opus", enabled: true },
+      analyst: { tier: "opus", enabled: true },
+      planner: { tier: "opus", enabled: true }
     },
     features: {
       parallelExecution: true,
@@ -20714,11 +20714,6 @@ function loadConfig(directory) {
       defaultTier: "MEDIUM",
       escalationEnabled: true,
       maxEscalations: 2,
-      tierModels: {
-        LOW: "github-copilot/claude-haiku-4",
-        MEDIUM: "github-copilot/claude-sonnet-4",
-        HIGH: "github-copilot/claude-opus-4"
-      },
       agentOverrides: {
         architect: { tier: "HIGH", reason: "Advisory agent requires deep reasoning" },
         planner: { tier: "HIGH", reason: "Strategic planning requires deep reasoning" },
@@ -21873,6 +21868,29 @@ function createBackgroundManager(ctx, config2, modelService) {
     }
     return count;
   };
+  const detectConfiguredProvider = async () => {
+    try {
+      const providersResp = await ctx.client.provider.list({
+        query: { directory: ctx.directory }
+      });
+      const providers = providersResp.data;
+      for (const provider of providers || []) {
+        if (provider.models && provider.models.length > 0) {
+          const modelConfig = {
+            providerID: provider.id,
+            modelID: provider.models[0].id
+          };
+          log(`Detected configured provider as fallback`, { providerID: modelConfig.providerID, modelID: modelConfig.modelID });
+          return modelConfig;
+        }
+      }
+      log(`No configured providers found`);
+      return;
+    } catch (err) {
+      log(`Failed to detect configured provider`, { error: String(err) });
+      return;
+    }
+  };
   const getParentSessionModel = async (parentSessionID) => {
     if (modelCache.has(parentSessionID)) {
       return modelCache.get(parentSessionID);
@@ -21894,11 +21912,17 @@ function createBackgroundManager(ctx, config2, modelService) {
         return model;
       }
       log(`Parent session has no assistant messages with model info`, { parentSessionID });
-      return;
     } catch (err) {
       log(`Failed to get parent session model`, { parentSessionID, error: String(err) });
-      return;
     }
+    try {
+      const configuredModel = await detectConfiguredProvider();
+      if (configuredModel) {
+        modelCache.set(parentSessionID, configuredModel);
+        return configuredModel;
+      }
+    } catch {}
+    return;
   };
   const createTask = async (parentSessionID, description, prompt, agent, model) => {
     const runningCount = getRunningCount();
@@ -21906,109 +21930,127 @@ function createBackgroundManager(ctx, config2, modelService) {
       throw new Error(`Max concurrent tasks (${defaultConcurrency}) reached. Wait for some to complete.`);
     }
     const taskId = generateTaskId();
-    const task = {
-      id: taskId,
-      status: "running",
-      description,
-      parentSessionID,
-      startedAt: Date.now()
-    };
-    tasks.set(taskId, task);
-    log(`Background task created`, { taskId, description, agent });
-    const parentModel = model || await getParentSessionModel(parentSessionID);
-    const resolvedModel = modelService ? modelService.resolveModelForAgent(agent, parentModel) : parentModel;
-    if (resolvedModel && resolvedModel !== parentModel) {
-      log(`[background-manager] Using tier-mapped model for ${agent}`, {
-        providerID: resolvedModel.providerID,
-        modelID: resolvedModel.modelID
-      });
-    }
-    (async () => {
-      try {
-        const sessionResp = await ctx.client.session.create({
-          body: {
-            parentID: parentSessionID,
-            title: `${agent}: ${description}`
-          },
-          query: { directory: ctx.directory }
+    try {
+      const parentModel = model || await getParentSessionModel(parentSessionID);
+      const resolvedModel = modelService ? modelService.resolveModelForAgent(agent, parentModel) : parentModel;
+      if (!resolvedModel) {
+        throw new Error(`[OMCO] No model available for agent "${agent}". ` + `Configure tier mapping with 'npx omco-setup'.`);
+      }
+      if (resolvedModel !== parentModel) {
+        log(`[background-manager] Using tier-mapped model for ${agent}`, {
+          providerID: resolvedModel.providerID,
+          modelID: resolvedModel.modelID
         });
-        const sessionID = sessionResp.data?.id ?? sessionResp.id;
-        if (!sessionID)
-          throw new Error("Failed to create session");
-        task.sessionID = sessionID;
-        const canonicalName = isAlias(agent) ? getCanonicalName(agent) : agent;
-        const agentDef = getAgent(canonicalName);
-        const systemPrompt = agentDef?.systemPrompt || "";
-        const fullPrompt = systemPrompt ? `${systemPrompt}
+      }
+      const task = {
+        id: taskId,
+        status: "running",
+        description,
+        parentSessionID,
+        startedAt: Date.now()
+      };
+      tasks.set(taskId, task);
+      log(`Background task created`, { taskId, description, agent });
+      (async () => {
+        try {
+          const sessionResp = await ctx.client.session.create({
+            body: {
+              parentID: parentSessionID,
+              title: `${agent}: ${description}`
+            },
+            query: { directory: ctx.directory }
+          });
+          const sessionID = sessionResp.data?.id ?? sessionResp.id;
+          if (!sessionID)
+            throw new Error("Failed to create session");
+          task.sessionID = sessionID;
+          const canonicalName = isAlias(agent) ? getCanonicalName(agent) : agent;
+          const agentDef = getAgent(canonicalName);
+          const systemPrompt = agentDef?.systemPrompt || "";
+          const fullPrompt = systemPrompt ? `${systemPrompt}
 
 ${prompt}` : prompt;
-        const promptBody = {
-          parts: [{ type: "text", text: fullPrompt }]
-        };
-        if (resolvedModel) {
-          promptBody.model = resolvedModel;
-          log(`Using model for subagent`, { taskId, ...resolvedModel });
-        }
-        let promptResp = await ctx.client.session.prompt({
-          path: { id: sessionID },
-          body: promptBody,
-          query: { directory: ctx.directory }
-        });
-        let promptData = promptResp.data;
-        if (promptResp.error) {
-          throw new Error(`Prompt failed: ${JSON.stringify(promptResp.error)}`);
-        }
-        if (promptData?.info?.error) {
-          const err = promptData.info.error;
-          const isModelError = err.name === "ProviderModelNotFoundError" || err.name === "ProviderNotFoundError" || err.name?.includes("Model") || err.name?.includes("Provider");
-          if (isModelError && parentModel && resolvedModel !== parentModel) {
-            log(`[background-manager] Model error with tier-mapped model, retrying with parent session model`, {
-              taskId,
-              error: err.name,
-              failedModel: resolvedModel,
-              fallbackModel: parentModel
-            });
-            promptBody.model = parentModel;
-            promptResp = await ctx.client.session.prompt({
-              path: { id: sessionID },
-              body: promptBody,
-              query: { directory: ctx.directory }
-            });
-            promptData = promptResp.data;
-            if (promptResp.error) {
-              throw new Error(`Prompt failed after retry: ${JSON.stringify(promptResp.error)}`);
+          const promptBody = {
+            parts: [{ type: "text", text: fullPrompt }]
+          };
+          if (resolvedModel) {
+            promptBody.model = resolvedModel;
+            log(`Using model for subagent`, { taskId, ...resolvedModel });
+          }
+          let promptResp = await ctx.client.session.prompt({
+            path: { id: sessionID },
+            body: promptBody,
+            query: { directory: ctx.directory }
+          });
+          let promptData = promptResp.data;
+          if (promptResp.error) {
+            throw new Error(`Prompt failed: ${JSON.stringify(promptResp.error)}`);
+          }
+          if (promptData?.info?.error) {
+            const err = promptData.info.error;
+            const isModelError = err.name === "ProviderModelNotFoundError" || err.name === "ProviderNotFoundError" || err.name?.includes("Model") || err.name?.includes("Provider");
+            if (isModelError && parentModel && resolvedModel !== parentModel) {
+              log(`[background-manager] Model error with tier-mapped model, retrying with parent session model`, {
+                taskId,
+                error: err.name,
+                failedModel: resolvedModel,
+                fallbackModel: parentModel
+              });
+              promptBody.model = parentModel;
+              promptResp = await ctx.client.session.prompt({
+                path: { id: sessionID },
+                body: promptBody,
+                query: { directory: ctx.directory }
+              });
+              promptData = promptResp.data;
+              if (promptResp.error) {
+                throw new Error(`Prompt failed after retry: ${JSON.stringify(promptResp.error)}`);
+              }
             }
           }
-        }
-        if (promptData?.info?.error) {
-          const err = promptData.info.error;
-          const errMsg = err.data?.message || err.name || "Unknown error";
-          throw new Error(`[${err.name}] ${errMsg}`);
-        }
-        const result = promptData?.parts?.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(`
-`) || "";
-        task.result = result;
-        task.status = "completed";
-        task.completedAt = Date.now();
-        log(`Background task completed`, { taskId, duration: task.completedAt - task.startedAt });
-        ctx.client.tui.showToast({
-          body: {
-            title: "Background Task Completed",
-            message: `${description.substring(0, 40)}...`,
-            variant: "success",
-            duration: 3000
+          if (promptData?.info?.error) {
+            const err = promptData.info.error;
+            const errMsg = err.data?.message || err.name || "Unknown error";
+            throw new Error(`[${err.name}] ${errMsg}`);
           }
-        }).catch((err) => {
-          log(`Toast notification failed`, { taskId, error: String(err) });
-        });
-      } catch (err) {
-        task.status = "failed";
-        task.error = String(err);
-        task.completedAt = Date.now();
-        log(`Background task failed`, { taskId, error: task.error });
-      }
-    })();
-    return task;
+          const result = promptData?.parts?.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(`
+`) || "";
+          task.result = result;
+          task.status = "completed";
+          task.completedAt = Date.now();
+          log(`Background task completed`, { taskId, duration: task.completedAt - task.startedAt });
+          ctx.client.tui.showToast({
+            body: {
+              title: "Background Task Completed",
+              message: `${description.substring(0, 40)}...`,
+              variant: "success",
+              duration: 3000
+            }
+          }).catch((err) => {
+            log(`Toast notification failed`, { taskId, error: String(err) });
+          });
+        } catch (err) {
+          task.status = "failed";
+          task.error = String(err);
+          task.completedAt = Date.now();
+          log(`Background task failed`, { taskId, error: task.error });
+        }
+      })();
+      return task;
+    } catch (err) {
+      const failedTask = {
+        id: taskId,
+        status: "failed",
+        description,
+        parentSessionID,
+        error: String(err),
+        startedAt: Date.now(),
+        completedAt: Date.now()
+      };
+      tasks.set(taskId, failedTask);
+      log(`Background task failed during creation`, { taskId, error: String(err) });
+      return failedTask;
+    }
   };
   const getTask = (taskId) => {
     return tasks.get(taskId);
@@ -34513,12 +34555,22 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
 
 ${prompt}`;
       const parentModel = await manager.getParentSessionModel(context.sessionID);
-      const resolvedModel = modelService ? modelService.resolveModelForAgent(subagent_type, parentModel) : parentModel;
-      if (resolvedModel && resolvedModel !== parentModel) {
-        log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
-          providerID: resolvedModel.providerID,
-          modelID: resolvedModel.modelID
-        });
+      let resolvedModel = parentModel;
+      if (modelService) {
+        try {
+          resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
+          if (resolvedModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
+              providerID: resolvedModel.providerID,
+              modelID: resolvedModel.modelID
+            });
+          }
+        } catch (err) {
+          return JSON.stringify({
+            status: "failed",
+            error: err instanceof Error ? err.message : String(err)
+          });
+        }
       }
       if (run_in_background) {
         const task = await manager.createTask(context.sessionID, description, enhancedPrompt, subagent_type, resolvedModel);
@@ -34735,11 +34787,43 @@ function createModelResolutionService(modelMappingConfig, agentOverrides) {
     }
     return fallbackModel;
   };
+  const resolveModelForAgentOrThrow = (agentName, fallbackModel) => {
+    const result = resolveModelForAgent(agentName, fallbackModel);
+    if (result)
+      return result;
+    const tierDefaults2 = resolver.getTierDefaults();
+    const hasConfiguredTiers2 = Object.values(tierDefaults2).some((m) => m.includes("/"));
+    let errorMessage = `[OMCO] Cannot resolve model for agent "${agentName}".`;
+    if (!hasConfiguredTiers2) {
+      errorMessage += `
+
+No tier mapping configured. Run one of:
+` + `  1. npx omco-setup (interactive setup)
+` + `  2. Add tierDefaults to ~/.config/opencode/omco.json:
+` + `     {
+` + `       "model_mapping": {
+` + `         "tierDefaults": {
+` + `           "haiku": "openai/gpt-4o-mini",
+` + `           "sonnet": "openai/gpt-4o",
+` + `           "opus": "openai/o1"
+` + `         }
+` + `       }
+` + `     }`;
+    } else {
+      errorMessage += `
+
+Tier mapping is configured but no fallback model available.
+` + `This usually means the parent session hasn't started yet.
+` + `Try sending a message first to establish the session model.`;
+    }
+    throw new Error(errorMessage);
+  };
   const isTierMappingConfigured = () => {
     return hasConfiguredTiers;
   };
   return {
     resolveModelForAgent,
+    resolveModelForAgentOrThrow,
     isTierMappingConfigured
   };
 }

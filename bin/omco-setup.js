@@ -87,6 +87,16 @@ async function main() {
   };
   writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + `
 `);
+  try {
+    const written = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    if (written.model_mapping?.tierDefaults) {
+      console.log(`
+✅ Config verification passed.`);
+    }
+  } catch {
+    console.error(`
+⚠️ Warning: Could not verify written config.`);
+  }
   console.log(`
 ✅ Configured tier mapping for ${provider}:
 `);

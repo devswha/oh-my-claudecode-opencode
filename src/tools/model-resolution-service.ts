@@ -35,7 +35,19 @@ export interface ModelResolutionService {
     agentName: string,
     fallbackModel?: ModelConfig
   ): ModelConfig | undefined;
-  
+
+  /**
+   * Resolve model for an agent, always returning a result or throwing
+   * @param agentName - Name of the agent (canonical or alias)
+   * @param fallbackModel - Parent session model to use if resolution fails
+   * @returns Resolved ModelConfig (never undefined)
+   * @throws Error with actionable message if model cannot be resolved
+   */
+  resolveModelForAgentOrThrow(
+    agentName: string,
+    fallbackModel?: ModelConfig
+  ): ModelConfig;
+
   /**
    * Check if tier mapping is configured (tierDefaults has provider/model format)
    */
@@ -124,12 +136,49 @@ export function createModelResolutionService(
     return fallbackModel;
   };
   
+  const resolveModelForAgentOrThrow = (
+    agentName: string,
+    fallbackModel?: ModelConfig
+  ): ModelConfig => {
+    const result = resolveModelForAgent(agentName, fallbackModel);
+
+    if (result) return result;
+
+    // No model could be resolved - throw with actionable error
+    const tierDefaults = resolver.getTierDefaults();
+    const hasConfiguredTiers = Object.values(tierDefaults).some(m => m.includes("/"));
+
+    let errorMessage = `[OMCO] Cannot resolve model for agent "${agentName}".`;
+
+    if (!hasConfiguredTiers) {
+      errorMessage += `\n\nNo tier mapping configured. Run one of:\n` +
+        `  1. npx omco-setup (interactive setup)\n` +
+        `  2. Add tierDefaults to ~/.config/opencode/omco.json:\n` +
+        `     {\n` +
+        `       "model_mapping": {\n` +
+        `         "tierDefaults": {\n` +
+        `           "haiku": "openai/gpt-4o-mini",\n` +
+        `           "sonnet": "openai/gpt-4o",\n` +
+        `           "opus": "openai/o1"\n` +
+        `         }\n` +
+        `       }\n` +
+        `     }`;
+    } else {
+      errorMessage += `\n\nTier mapping is configured but no fallback model available.\n` +
+        `This usually means the parent session hasn't started yet.\n` +
+        `Try sending a message first to establish the session model.`;
+    }
+
+    throw new Error(errorMessage);
+  };
+
   const isTierMappingConfigured = (): boolean => {
     return hasConfiguredTiers;
   };
-  
+
   return {
     resolveModelForAgent,
+    resolveModelForAgentOrThrow,
     isTierMappingConfigured,
   };
 }

@@ -51,15 +51,25 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
       // OMCO-003: Resolve model for agent
       // Priority: tier mapping (if configured) > parent session model
       const parentModel = await manager.getParentSessionModel(context.sessionID);
-      const resolvedModel = modelService 
-        ? modelService.resolveModelForAgent(subagent_type, parentModel)
-        : parentModel;
-      
-      if (resolvedModel && resolvedModel !== parentModel) {
-        log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
-          providerID: resolvedModel.providerID,
-          modelID: resolvedModel.modelID,
-        });
+      let resolvedModel: ModelConfig | undefined = parentModel;
+
+      if (modelService) {
+        try {
+          resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
+
+          if (resolvedModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
+              providerID: resolvedModel.providerID,
+              modelID: resolvedModel.modelID,
+            });
+          }
+        } catch (err) {
+          // Model resolution failed - return actionable error to user
+          return JSON.stringify({
+            status: "failed",
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
       }
 
       if (run_in_background) {

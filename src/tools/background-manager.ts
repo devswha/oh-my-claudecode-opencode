@@ -95,6 +95,41 @@ export function createBackgroundManager(
   };
 
   /**
+   * Detect the first configured provider as a fallback
+   * Uses provider.list() to find any available provider
+   */
+  const detectConfiguredProvider = async (): Promise<ModelConfig | undefined> => {
+    try {
+      const providersResp = await ctx.client.provider.list({
+        query: { directory: ctx.directory },
+      });
+
+      const providers = providersResp.data as Array<{
+        id: string;
+        models?: Array<{ id: string }>;
+      }> | undefined;
+
+      // Find first provider with at least one model
+      for (const provider of providers || []) {
+        if (provider.models && provider.models.length > 0) {
+          const modelConfig: ModelConfig = {
+            providerID: provider.id,
+            modelID: provider.models[0].id,
+          };
+          log(`Detected configured provider as fallback`, { providerID: modelConfig.providerID, modelID: modelConfig.modelID });
+          return modelConfig;
+        }
+      }
+
+      log(`No configured providers found`);
+      return undefined;
+    } catch (err) {
+      log(`Failed to detect configured provider`, { error: String(err) });
+      return undefined;
+    }
+  };
+
+  /**
    * Get the model configuration from the parent session
    * This allows subagents to inherit the same provider/model as the main session
    */
@@ -133,11 +168,22 @@ export function createBackgroundManager(
       }
 
       log(`Parent session has no assistant messages with model info`, { parentSessionID });
-      return undefined;
     } catch (err) {
       log(`Failed to get parent session model`, { parentSessionID, error: String(err) });
-      return undefined;
     }
+
+    // Fallback 3: Try to detect configured provider
+    try {
+      const configuredModel = await detectConfiguredProvider();
+      if (configuredModel) {
+        modelCache.set(parentSessionID, configuredModel);
+        return configuredModel;
+      }
+    } catch {
+      // Provider detection failed, continue to return undefined
+    }
+
+    return undefined;
   };
 
   const createTask = async (
@@ -152,31 +198,43 @@ export function createBackgroundManager(
       throw new Error(`Max concurrent tasks (${defaultConcurrency}) reached. Wait for some to complete.`);
     }
 
+    // Generate task ID early for potential early failure
     const taskId = generateTaskId();
-    const task: BackgroundTask = {
-      id: taskId,
-      status: "running",
-      description,
-      parentSessionID,
-      startedAt: Date.now(),
-    };
 
-    tasks.set(taskId, task);
+    try {
+      // Resolve model: explicit model > tier mapping > parent session model > provider detection
+      const parentModel = model || await getParentSessionModel(parentSessionID);
+      const resolvedModel = modelService
+        ? modelService.resolveModelForAgent(agent, parentModel)
+        : parentModel;
 
-    log(`Background task created`, { taskId, description, agent });
+      // [CRITICAL] Check for undefined BEFORE creating session
+      if (!resolvedModel) {
+        throw new Error(
+          `[OMCO] No model available for agent "${agent}". ` +
+          `Configure tier mapping with 'npx omco-setup'.`
+        );
+      }
 
-    // Resolve model: explicit model > tier mapping > parent session model
-    const parentModel = model || await getParentSessionModel(parentSessionID);
-    const resolvedModel = modelService
-      ? modelService.resolveModelForAgent(agent, parentModel)
-      : parentModel;
-    
-    if (resolvedModel && resolvedModel !== parentModel) {
-      log(`[background-manager] Using tier-mapped model for ${agent}`, {
-        providerID: resolvedModel.providerID,
-        modelID: resolvedModel.modelID,
-      });
-    }
+      if (resolvedModel !== parentModel) {
+        log(`[background-manager] Using tier-mapped model for ${agent}`, {
+          providerID: resolvedModel.providerID,
+          modelID: resolvedModel.modelID,
+        });
+      }
+
+      // Now safe to create task
+      const task: BackgroundTask = {
+        id: taskId,
+        status: "running",
+        description,
+        parentSessionID,
+        startedAt: Date.now(),
+      };
+
+      tasks.set(taskId, task);
+
+      log(`Background task created`, { taskId, description, agent });
 
     (async () => {
       try {
@@ -304,7 +362,23 @@ export function createBackgroundManager(
       }
     })();
 
-    return task;
+      return task;
+    } catch (err) {
+      // [CRITICAL] Return immediately failed task with actionable error
+      // This handles both model resolution errors AND any session creation errors
+      const failedTask: BackgroundTask = {
+        id: taskId,
+        status: "failed",
+        description,
+        parentSessionID,
+        error: String(err),
+        startedAt: Date.now(),
+        completedAt: Date.now(),
+      };
+      tasks.set(taskId, failedTask);
+      log(`Background task failed during creation`, { taskId, error: String(err) });
+      return failedTask;
+    }
   };
 
   const getTask = (taskId: string): BackgroundTask | undefined => {

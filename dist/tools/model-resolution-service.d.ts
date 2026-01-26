@@ -28,6 +28,14 @@ export interface ModelResolutionService {
      */
     resolveModelForAgent(agentName: string, fallbackModel?: ModelConfig): ModelConfig | undefined;
     /**
+     * Resolve model for an agent, always returning a result or throwing
+     * @param agentName - Name of the agent (canonical or alias)
+     * @param fallbackModel - Parent session model to use if resolution fails
+     * @returns Resolved ModelConfig (never undefined)
+     * @throws Error with actionable message if model cannot be resolved
+     */
+    resolveModelForAgentOrThrow(agentName: string, fallbackModel?: ModelConfig): ModelConfig;
+    /**
      * Check if tier mapping is configured (tierDefaults has provider/model format)
      */
     isTierMappingConfigured(): boolean;

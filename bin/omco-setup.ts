@@ -105,6 +105,16 @@ async function main() {
   // Write config
   writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2) + "\n");
 
+  // Verify config can be read back
+  try {
+    const written = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    if (written.model_mapping?.tierDefaults) {
+      console.log(`\n✅ Config verification passed.`);
+    }
+  } catch {
+    console.error(`\n⚠️ Warning: Could not verify written config.`);
+  }
+
   console.log(`\n✅ Configured tier mapping for ${provider}:\n`);
   console.log(`   haiku  → ${tiers.haiku}`);
   console.log(`   sonnet → ${tiers.sonnet}`);

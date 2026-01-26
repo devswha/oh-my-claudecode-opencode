@@ -245,16 +245,16 @@ export function loadConfig(directory: string): OmoOmcsConfig {
 
   return {
     agents: {
-      omc: { model: 'github-copilot/claude-opus-4', enabled: true },
-      architect: { model: 'github-copilot/claude-opus-4', enabled: true },
-      researcher: { model: 'github-copilot/claude-sonnet-4', enabled: true },
-      explore: { model: 'github-copilot/claude-haiku-4', enabled: true },
-      frontendEngineer: { model: 'github-copilot/claude-sonnet-4', enabled: true },
-      documentWriter: { model: 'github-copilot/claude-haiku-4', enabled: true },
-      multimodalLooker: { model: 'github-copilot/claude-sonnet-4', enabled: true },
-      critic: { model: 'github-copilot/claude-opus-4', enabled: true },
-      analyst: { model: 'github-copilot/claude-opus-4', enabled: true },
-      planner: { model: 'github-copilot/claude-opus-4', enabled: true },
+      omc: { tier: 'opus', enabled: true },
+      architect: { tier: 'opus', enabled: true },
+      researcher: { tier: 'sonnet', enabled: true },
+      explore: { tier: 'haiku', enabled: true },
+      frontendEngineer: { tier: 'sonnet', enabled: true },
+      documentWriter: { tier: 'haiku', enabled: true },
+      multimodalLooker: { tier: 'sonnet', enabled: true },
+      critic: { tier: 'opus', enabled: true },
+      analyst: { tier: 'opus', enabled: true },
+      planner: { tier: 'opus', enabled: true },
     },
     features: {
       parallelExecution: true,
@@ -285,11 +285,6 @@ export function loadConfig(directory: string): OmoOmcsConfig {
       defaultTier: 'MEDIUM',
       escalationEnabled: true,
       maxEscalations: 2,
-      tierModels: {
-        LOW: 'github-copilot/claude-haiku-4',
-        MEDIUM: 'github-copilot/claude-sonnet-4',
-        HIGH: 'github-copilot/claude-opus-4',
-      },
       agentOverrides: {
         architect: { tier: 'HIGH', reason: 'Advisory agent requires deep reasoning' },
         planner: { tier: 'HIGH', reason: 'Strategic planning requires deep reasoning' },
