@@ -10,6 +10,9 @@
  * 3. Agent definition tier → tierDefaults  
  * 4. Fallback to sonnet tier
  * 5. If all else fails, use parent session model
+ * 
+ * Workaround:
+ * - opusReadOnlyFallbackToSonnet: opus + readOnly agents → sonnet (OpenCode bug workaround)
  */
 
 import { ModelResolver, type ModelTier, type AgentModelConfig, type ModelMappingConfig } from "../config/model-resolver";
@@ -70,6 +73,7 @@ export function createModelResolutionService(
 ): ModelResolutionService {
   const resolver = new ModelResolver(modelMappingConfig);
   const debugLogging = modelMappingConfig?.debugLogging ?? false;
+  const opusReadOnlyFallback = modelMappingConfig?.opusReadOnlyFallbackToSonnet ?? false;
   
   // Check if any tierDefault has a real provider/model format
   const tierDefaults = resolver.getTierDefaults();
@@ -79,15 +83,25 @@ export function createModelResolutionService(
     agentName: string,
     fallbackModel?: ModelConfig
   ): ModelConfig | undefined => {
-    // Get agent definition to find its tier
+    // Get agent definition to find its tier and readOnly status
     const agentDef = getAgent(agentName);
     const agentTier: ModelTier | undefined = agentDef?.model;
+    const isReadOnly = agentDef?.readOnly ?? false;
+    
+    // Workaround: opus + readOnly → sonnet (OpenCode runtime bug)
+    let effectiveTier = agentTier;
+    if (opusReadOnlyFallback && agentTier === "opus" && isReadOnly) {
+      effectiveTier = "sonnet";
+      if (debugLogging) {
+        log(`[model-resolution] ${agentName}: opus+readOnly fallback to sonnet (opusReadOnlyFallbackToSonnet enabled)`);
+      }
+    }
     
     // Get per-agent override from config
     const agentOverride = agentOverrides?.[agentName];
     
     // Resolve via ModelResolver (handles priority chain)
-    const resolution = resolver.resolve(agentName, agentTier, agentOverride);
+    const resolution = resolver.resolve(agentName, effectiveTier, agentOverride);
     
     // Parse the resolved model string to ModelConfig
     const modelConfig = parseModelString(resolution.model);

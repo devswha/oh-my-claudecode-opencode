@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claudecode-opencode",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "description": "OpenCode port of oh-my-claudecode - Multi-agent orchestration plugin (omco)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

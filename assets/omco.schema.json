@@ -41,6 +41,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable debug logging for model resolution"
+        },
+        "opusReadOnlyFallbackToSonnet": {
+          "type": "boolean",
+          "default": false,
+          "description": "Workaround for OpenCode runtime bug: when enabled, opus tier agents with readOnly=true will use sonnet instead. Affects planner, analyst, critic, architect."
         }
       },
       "additionalProperties": false

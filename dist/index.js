@@ -34687,13 +34687,22 @@ function parseModelString(model) {
 function createModelResolutionService(modelMappingConfig, agentOverrides) {
   const resolver = new ModelResolver(modelMappingConfig);
   const debugLogging = modelMappingConfig?.debugLogging ?? false;
+  const opusReadOnlyFallback = modelMappingConfig?.opusReadOnlyFallbackToSonnet ?? false;
   const tierDefaults = resolver.getTierDefaults();
   const hasConfiguredTiers = Object.values(tierDefaults).some((m) => m.includes("/"));
   const resolveModelForAgent = (agentName, fallbackModel) => {
     const agentDef = getAgent(agentName);
     const agentTier = agentDef?.model;
+    const isReadOnly = agentDef?.readOnly ?? false;
+    let effectiveTier = agentTier;
+    if (opusReadOnlyFallback && agentTier === "opus" && isReadOnly) {
+      effectiveTier = "sonnet";
+      if (debugLogging) {
+        log(`[model-resolution] ${agentName}: opus+readOnly fallback to sonnet (opusReadOnlyFallbackToSonnet enabled)`);
+      }
+    }
     const agentOverride = agentOverrides?.[agentName];
-    const resolution = resolver.resolve(agentName, agentTier, agentOverride);
+    const resolution = resolver.resolve(agentName, effectiveTier, agentOverride);
     const modelConfig = parseModelString(resolution.model);
     if (modelConfig) {
       if (debugLogging) {

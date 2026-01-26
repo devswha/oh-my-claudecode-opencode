@@ -8,6 +8,12 @@ export interface TierModelMapping {
 export interface ModelMappingConfig {
     tierDefaults?: Partial<TierModelMapping>;
     debugLogging?: boolean;
+    /**
+     * Workaround for OpenCode runtime bug where readOnly + opus agents fail
+     * with "JSON Parse error: Unexpected EOF".
+     * When enabled, opus tier agents with readOnly=true will use sonnet instead.
+     */
+    opusReadOnlyFallbackToSonnet?: boolean;
 }
 export interface AgentModelConfig {
     model?: ConcreteModel;

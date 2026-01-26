@@ -10,6 +10,9 @@
  * 3. Agent definition tier → tierDefaults
  * 4. Fallback to sonnet tier
  * 5. If all else fails, use parent session model
+ *
+ * Workaround:
+ * - opusReadOnlyFallbackToSonnet: opus + readOnly agents → sonnet (OpenCode bug workaround)
  */
 import { type AgentModelConfig, type ModelMappingConfig } from "../config/model-resolver";
 export interface ModelConfig {
