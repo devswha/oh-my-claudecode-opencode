@@ -537,14 +537,14 @@
       },
       "additionalProperties": false
     },
-    "sisyphus_agent": {
+    "omco_agent": {
       "type": "object",
-      "description": "Sisyphus agent configuration",
+      "description": "OMCO agent configuration",
       "properties": {
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Disable Sisyphus agent"
+          "description": "Disable OMCO agent"
         },
         "planner_enabled": {
           "type": "boolean",

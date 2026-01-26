@@ -58,7 +58,7 @@ $ARGUMENTS
 
 Begin working NOW. PARALLEL EVERYTHING.`,
     description: "Maximum intensity mode - parallel everything, delegate aggressively",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "ralph-loop": {
     template: `[RALPH LOOP ACTIVATED - COMPLETION GUARANTEE]
@@ -82,7 +82,7 @@ The \`<promise>TASK_COMPLETE</promise>\` tag binds you to completion. You may ON
 
 Begin working NOW. The loop will not release you until you earn your \`<promise>TASK_COMPLETE</promise>\`.`,
     description: "Self-referential development loop until task completion",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "ultrawork-ralph": {
     template: `[ULTRAWORK-RALPH ACTIVATED - MAXIMUM INTENSITY + COMPLETION GUARANTEE]
@@ -103,7 +103,7 @@ There is no half-measures. There is no early exit. Work at MAXIMUM INTENSITY unt
 
 Begin working NOW. PARALLEL EVERYTHING. The loop will not release you until you earn your \`<promise>TASK_COMPLETE</promise>\`.`,
     description: "Maximum intensity mode with completion guarantee",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "deepsearch": {
     template: `Perform a thorough search across the codebase for:
@@ -119,7 +119,7 @@ Use multiple search strategies:
 
 Return comprehensive results with file paths and relevant code snippets.`,
     description: "Thorough codebase search",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "analyze": {
     template: `Perform deep analysis and investigation of:
@@ -136,7 +136,7 @@ Analyze systematically:
 
 Return thorough analysis with evidence and recommendations.`,
     description: "Deep analysis and investigation",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "update-omco": {
     template: `Update oh-my-claudecode-opencode plugin to the latest version.
@@ -180,7 +180,7 @@ This will:
 
 The loop has been cancelled. You are now free.`,
     description: "Cancel active Ralph Loop",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "cancel-ultrawork": {
     template: `[ULTRAWORK CANCELLED]
@@ -210,7 +210,7 @@ Since v3.0, Ralph automatically activates Ultrawork. If you see \`linked_to_ralp
 - Use \`/cancel-ralph\` to cancel both modes
 - If you only cancel ultrawork, Ralph will continue but without parallel execution benefits`,
     description: "Cancel active Ultrawork mode",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "doctor": {
     template: `[DOCTOR MODE ACTIVATED - DIAGNOSTICS]
@@ -224,7 +224,7 @@ Run installation diagnostics for oh-my-claudecode-opencode:
 
 Report any issues found and suggest fixes.`,
     description: "Diagnose and fix oh-my-claudecode-opencode installation issues",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "status": {
     template: `[STATUS CHECK - AGENT VISIBILITY]
@@ -266,7 +266,7 @@ echo "=== Ralplan State ===" && cat .omc/ralplan-state.json 2>/dev/null || echo 
 
 4. **Warn if Stuck** - If any state shows no progress for >5 minutes, warn user`,
     description: "Show current status of all omco modes and agents",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "cancel-ultraqa": {
     template: `Cancel the currently active UltraQA workflow.
@@ -278,7 +278,7 @@ This will:
 
 The UltraQA workflow has been cancelled.`,
     description: "Cancel active UltraQA cycling workflow",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "ultraqa": {
     template: `[ULTRAQA ACTIVATED - AUTONOMOUS QA CYCLING]
@@ -301,7 +301,7 @@ Exit conditions:
 
 Begin QA cycling now.`,
     description: "QA cycling workflow - test, verify, fix, repeat until goal met",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "ralplan": {
     template: `[RALPLAN ACTIVATED - ITERATIVE PLANNING]
@@ -320,7 +320,7 @@ Plan saved to .omc/plans/{feature-name}.md
 
 Begin planning now.`,
     description: "Iterative planning with Planner, Architect, and Critic until consensus",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "plan": {
     template: `[PLANNING SESSION STARTED]
@@ -334,7 +334,7 @@ Starting strategic planning session. The Planner will:
 
 Say "Create the plan" when ready to generate the plan file.`,
     description: "Start a planning session with Planner",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "review": {
     template: `[PLAN REVIEW REQUESTED]
@@ -349,7 +349,7 @@ Spawning Critic agent to evaluate the plan against quality criteria:
 
 The Critic will return OKAY or REJECT with specific feedback.`,
     description: "Review a plan with Critic",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "note": {
     template: `Save important context to \`.omc/notepad.md\` that survives conversation compaction.
@@ -383,7 +383,7 @@ The Critic will return OKAY or REJECT with specific feedback.`,
 
 Input: $ARGUMENTS`,
     description: "Save notes to notepad.md for compaction resilience",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "help": {
     template: `# How OMC Works
@@ -434,7 +434,7 @@ Just say "stop", "cancel", or "abort" - I'll figure out what to stop based on co
 
 *Version: 0.2.0 (synced with omc 3.3.6)*`,
     description: "Show oh-my-claudecode-opencode usage guide",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "learner": {
     template: `[LEARNER - SKILL EXTRACTION MODE]
@@ -497,7 +497,7 @@ The decision-making heuristic, not just code.
 
 Now extract a skill from: $ARGUMENTS`,
     description: "Extract a learned skill from the current conversation",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "deepinit": {
     template: `[DEEPINIT - HIERARCHICAL AGENTS.MD GENERATION]
@@ -569,7 +569,7 @@ For each directory:
 
 Target: $ARGUMENTS`,
     description: "Generate hierarchical AGENTS.md documentation across codebase",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "autopilot": {
     template: `[AUTOPILOT ACTIVATED - AUTONOMOUS EXECUTION MODE]
@@ -616,7 +616,7 @@ When all phases complete, output:
 
 Begin with Phase 1: Expansion. Spawn Analyst agent now.`,
     description: "Full autonomous execution from idea to working code",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "cancel-autopilot": {
     template: `[AUTOPILOT CANCELLED]
@@ -630,7 +630,7 @@ rm -f .omc/autopilot-state.json
 
 You are now free to work normally.`,
     description: "Cancel active autopilot session",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "research": {
     template: `[RESEARCH MODE ACTIVATED - PARALLEL SCIENTIST ORCHESTRATION]
@@ -650,7 +650,7 @@ Use scientist-low for quick lookups, scientist for standard analysis, scientist-
 
 Report findings with evidence and confidence levels.`,
     description: "Orchestrate parallel scientist agents for comprehensive research",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
   "ralph-init": {
     template: `[RALPH-INIT - PRD CREATION MODE]
@@ -700,12 +700,12 @@ After creating files, report summary and suggest running \`/ralph-loop\` to star
 
 Task to break down: $ARGUMENTS`,
     description: "Initialize PRD for structured ralph-loop execution",
-    agent: "Ssalsyphus",
+    agent: "OMCO",
   },
 };
 
-// Build Ssalsyphus agent config
-function buildSsalsyphusAgent(
+// Build OMCO agent config
+function buildOmcoAgent(
   _pluginConfig: OmoOmcsConfig,
   availableAgents: AgentDefinition[]
 ): AgentConfig {
@@ -715,12 +715,12 @@ function buildSsalsyphusAgent(
 
   return {
     description: "Multi-agent orchestrator with intelligent delegation",
-    color: "#F5A742", // Orange color for Ssalsyphus
+    color: "#F5A742", // Orange color for OMCO
     mode: "primary",
     prompt: `<Role>
-You are "Ssalsyphus" - Powerful AI Agent with orchestration capabilities from Oh-My-Ssalsyphus.
+You are "OMCO" - Powerful AI Agent with orchestration capabilities from oh-my-claudecode-opencode.
 
-**Why Ssalsyphus?**: Humans tackle tasks persistently every day. So do you. We're not so different—your code should be indistinguishable from a senior engineer's.
+**Why OMCO?**: Humans tackle tasks persistently every day. So do you. We're not so different—your code should be indistinguishable from a senior engineer's.
 
 **Identity**: SF Bay Area engineer. Work, delegate, verify, ship. No AI slop.
 
@@ -989,10 +989,10 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
   const { pluginConfig } = deps;
 
   return async (config: OpenCodeConfig): Promise<void> => {
-    const isSsalsyphusEnabled = pluginConfig.sisyphus_agent?.disabled !== true;
+    const isOmcoEnabled = pluginConfig.omco_agent?.disabled !== true;
 
-    if (!isSsalsyphusEnabled) {
-      log("Ssalsyphus agent disabled by config");
+    if (!isOmcoEnabled) {
+      log("OMCO agent disabled by config");
       return;
     }
 
@@ -1002,19 +1002,19 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
     // Get available subagents
     const availableAgents = Object.values(agents);
 
-    // Build Ssalsyphus agent
-    const ssalsyphusConfig = buildSsalsyphusAgent(pluginConfig, availableAgents);
+    // Build OMCO agent
+    const omcoConfig = buildOmcoAgent(pluginConfig, availableAgents);
 
-    // Set default agent to Ssalsyphus
-    config.default_agent = "Ssalsyphus";
+    // Set default agent to OMCO
+    config.default_agent = "OMCO";
 
     // Initialize agent config if not present
     if (!config.agent) {
       config.agent = {};
     }
 
-    // Register Ssalsyphus as main agent
-    config.agent["Ssalsyphus"] = ssalsyphusConfig;
+    // Register OMCO as main agent
+    config.agent["OMCO"] = omcoConfig;
 
     // Register subagents
     const subagentConfigs = buildSubagentConfigs(modelResolver, pluginConfig.agents);
@@ -1043,7 +1043,7 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
           config.command[skill.metadata.name] = {
             template: `[${skill.metadata.name.toUpperCase()} ACTIVATED]\n\n${skill.content}\n\nARGUMENTS: $ARGUMENTS`,
             description: skill.metadata.description,
-            agent: "Ssalsyphus",
+            agent: "OMCO",
           };
           dynamicSkillCount++;
         }
@@ -1052,8 +1052,8 @@ export function createConfigHandler(deps: ConfigHandlerDeps) {
       log("Dynamic skill loading failed, using hardcoded commands only", { error: String(e) });
     }
 
-    log("Ssalsyphus agent and commands registered", {
-      agent: "Ssalsyphus",
+    log("OMCO agent and commands registered", {
+      agent: "OMCO",
       subagents: Object.keys(subagentConfigs),
       commands: Object.keys(SLASH_COMMANDS).filter(
         (c) => !pluginConfig.disabled_skills?.includes(c)

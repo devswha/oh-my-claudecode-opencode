@@ -1,6 +1,6 @@
 <!-- Generated: 2026-01-22 | Updated: 2026-01-22 -->
 
-# oh-my-ssalsyphus (omo-omcs)
+# oh-my-claudecode-opencode (OMCO)
 
 > **OpenCode port of [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)**
 
@@ -21,15 +21,15 @@
 │        ↓                                                        │
 │   동일한 Tool Calling, Agent Actions, 완료 보장                  │
 │        ↓                                                        │
-│   OpenCode + GitHub Copilot + Claude + omo-omcs                 │
+│   OpenCode + GitHub Copilot + Claude + OMCO                 │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 핵심 포팅 목표
 
-| 원본 (oh-my-claudecode) | 포트 (omo-omcs) | 상태 |
-|------------------------|-----------------|------|
+| 원본 (oh-my-claudecode) | 포트 (OMCO) | 상태 |
+|------------------------|-------------|------|
 | Shell hooks + Node.js bridge | Native TypeScript plugin API | ✅ |
 | Stop hook (proactive blocking) | session.idle event (reactive) | ⚠️ 제한적 |
 | 28개 전문 에이전트 | 동일한 에이전트 정의 | ✅ |
@@ -42,7 +42,7 @@
 
 ### Feature Parity with oh-my-claudecode v3.3.4
 
-현재 oh-my-claudecode의 최신 버전은 **v3.3.4**이다. 이 포트는 핵심 기능의 feature parity를 목표로 한다:
+현재 oh-my-claudecode의 최신 버전은 **v3.3.4**이다. OMCO는 핵심 기능의 feature parity를 목표로 한다:
 
 - ✅ **자동 에이전트 오케스트레이션** - 태스크 복잡도에 따른 전문가 자동 배치
 - ✅ **Magic Keywords** - `ralph`, `plan`, `autopilot`, `ulw` 등
@@ -52,9 +52,9 @@
 
 ## Purpose
 
-Like Sisyphus rolling his boulder eternally, this plugin provides **completion guarantees** through ultrawork mode, ralph loops, TODO continuation, and session state management.
+OMCO provides **multi-agent orchestration** for OpenCode with completion guarantees through ultrawork mode, ralph loops, TODO continuation, and session state management.
 
-**Philosophy**: "The struggle itself toward the heights is enough to fill a man's heart. One must imagine Sisyphus happy." - Albert Camus
+**Philosophy**: Bringing oh-my-claudecode's powerful agent orchestration to the OpenCode ecosystem.
 
 ## Key Files
 
@@ -65,7 +65,7 @@ Like Sisyphus rolling his boulder eternally, this plugin provides **completion g
 | `bun.lock` | Bun package manager lockfile |
 | `README.md` | User-facing documentation with features, usage, and installation |
 | `src/index.ts` | Main plugin entry point - orchestrates all hooks and tools |
-| `assets/omo-omcs.schema.json` | JSON schema for configuration validation |
+| `assets/OMCO.schema.json` | JSON schema for configuration validation |
 | `docs/ROADMAP.md` | Feature roadmap, known issues, phase tracking |
 
 ## Subdirectories
@@ -74,7 +74,7 @@ Like Sisyphus rolling his boulder eternally, this plugin provides **completion g
 |-----------|---------|-----------|
 | **src/** | Main plugin implementation | `index.ts` - plugin orchestrator |
 | **src/agents/** | Specialized agent definitions | Agent configuration and orchestration |
-| **src/config/** | Configuration loading | `index.ts` - loads `.opencode/omo-omcs.json` |
+| **src/config/** | Configuration loading | `index.ts` - loads `.opencode/OMCO.json` |
 | **src/hooks/** | OpenCode event handlers | System prompts, completion enforcer, ralph loop, keyword detection |
 | **src/tools/** | Available commands | Background task manager, agent calling, builtin commands |
 | **src/prd/** | Product requirements management | PRD generation, progress tracking for ralph loop |
@@ -83,8 +83,8 @@ Like Sisyphus rolling his boulder eternally, this plugin provides **completion g
 | **src/plugin-handlers/** | Plugin configuration | Agent registration, command templates |
 | **tests/** | Test suite (40+ tests) | Hooks, integration, notepad system tests |
 | **docs/** | Documentation | ROADMAP.md with feature status and migration guide |
-| **.sisyphus/** | Local session persistence | Notepad and session state cache |
-| **.opencode/** | OpenCode config directory | omo-omcs.json configuration |
+| **.omco/** | Local session persistence | Notepad and session state cache |
+| **.opencode/** | OpenCode config directory | OMCO.json configuration |
 | **.omc/** | Multi-agent orchestration state | ultrawork-state.json, ralph-state.json, prd.json, progress.txt |
 
 ## For AI Agents
@@ -129,7 +129,7 @@ bun run lint
 ```
 OpenCode Client
     ↓
-omo-omcs Plugin (src/index.ts)
+OMCO Plugin (src/index.ts)
     ├─ event handlers (src/hooks/*)
     ├─ tools (src/tools/*)
     ├─ agent registration (src/plugin-handlers/*)
@@ -201,10 +201,10 @@ export const createMyHook = (ctx: PluginInput) => ({
 // Examples: /ralph-loop, /ultrawork, /cancel-ralph
 ```
 
-**Agent Calling** (src/tools/call-omo-agent.ts):
+**Agent Calling** (src/tools/call-omco-agent.ts):
 ```typescript
 // Agents are called via background_task tool
-// Supported: explore, librarian, oracle, sisyphus-junior, frontend-engineer, document-writer
+// Supported: explore, librarian, oracle, omco-executor, frontend-engineer, document-writer
 // Legacy names still work for backward compatibility
 ```
 
@@ -221,7 +221,7 @@ export const createMyHook = (ctx: PluginInput) => ({
 **Notepad Memory**:
 - `<remember>context</remember>` tags in tool output
 - Processed by `remember-tag-processor` hook
-- Survives conversation compaction via `.sisyphus/notepad.md`
+- Survives conversation compaction via `.omco/notepad.md`
 - Used in persistent mode continuation for context injection
 
 ## Dependencies
@@ -254,7 +254,7 @@ export const createMyHook = (ctx: PluginInput) => ({
 
 ```
 Plugin Init
-  ├─ Load config from .opencode/omo-omcs.json
+  ├─ Load config from .opencode/OMCO.json
   ├─ Initialize state managers (ultrawork, ralph, verification)
   ├─ Create background task manager for parallel agents
   ├─ Register hooks:
@@ -338,9 +338,9 @@ designer              → frontend-engineer
 designer-low          → frontend-engineer-low
 designer-high         → frontend-engineer-high
 writer                → document-writer
-executor              → sisyphus-junior
-executor-low          → sisyphus-junior-low
-executor-high         → sisyphus-junior-high
+executor              → omco-executor
+executor-low          → omco-executor-low
+executor-high         → omco-executor-high
 planner               → prometheus
 analyst               → metis
 critic                → momus
@@ -379,7 +379,7 @@ When modifying this project:
 - [ ] Build succeeds: `bun run build`
 - [ ] No lint errors: `bun run lint`
 - [ ] `.omc/` state files are ignored by git
-- [ ] Configuration loads from `.opencode/omo-omcs.json`
+- [ ] Configuration loads from `.opencode/OMCO.json`
 - [ ] State directory respects `~/.opencode/` for global state
 - [ ] All hooks are async-safe
 - [ ] Session IDs properly threaded through state

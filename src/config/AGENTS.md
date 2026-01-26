@@ -4,11 +4,11 @@
 
 ## Porting Context
 
-oh-my-claudecode 설정 스키마를 .opencode/omo-omcs.json으로 변환. oh-my-claudecode의 .claude/omo-omcs.json 설정 파일 형식이 OpenCode의 .opencode/ 디렉토리 규칙에 맞게 조정되었다. 설정 스키마 구조(에이전트 설정, 훅 비활성화, 백그라운드 작업 설정 등)는 oh-my-claudecode와 동일하다.
+oh-my-claudecode 설정 스키마를 .opencode/OMCO.json으로 변환. oh-my-claudecode의 .claude/OMCO.json 설정 파일 형식이 OpenCode의 .opencode/ 디렉토리 규칙에 맞게 조정되었다. 설정 스키마 구조(에이전트 설정, 훅 비활성화, 백그라운드 작업 설정 등)는 oh-my-claudecode와 동일하다.
 
 ## Overview
 
-This directory provides the configuration loading and validation system for omo-omcs. It handles loading configuration from `.opencode/omo-omcs.json` files with JSON/JSONC support and comment stripping.
+This directory provides the configuration loading and validation system for OMCO. It handles loading configuration from `.opencode/OMCO.json` files with JSON/JSONC support and comment stripping.
 
 ## Architecture
 
@@ -61,10 +61,10 @@ The config system uses Zod schemas for type-safe configuration with fallback def
 }
 ```
 
-### Sisyphus Agent Configuration
+### OMCO Agent Configuration
 ```typescript
 {
-  disabled?: boolean;         // Disable sisyphus agent
+  disabled?: boolean;         // Disable OMCO agent
   planner_enabled?: boolean;  // Enable planner integration
   replace_plan?: boolean;     // Replace existing plans
 }
@@ -81,17 +81,17 @@ The config system uses Zod schemas for type-safe configuration with fallback def
   disabled_mcps?: string[];
   background_task?: BackgroundTaskConfig;
   ralph_loop?: RalphLoopConfig;
-  sisyphus_agent?: SisyphusAgentConfig;
+  omco_agent?: OmcoAgentConfig;
 }
 ```
 
 ## Configuration File Locations
 
 Search order (first found wins):
-1. `${projectDir}/.opencode/omo-omcs.json`
-2. `${projectDir}/.opencode/omo-omcs.jsonc`
-3. `~/.config/opencode/omo-omcs.json`
-4. `~/.config/opencode/omo-omcs.jsonc`
+1. `${projectDir}/.opencode/OMCO.json`
+2. `${projectDir}/.opencode/OMCO.jsonc`
+3. `~/.config/opencode/OMCO.json`
+4. `~/.config/opencode/OMCO.jsonc`
 
 ## Default Configuration
 
@@ -198,8 +198,8 @@ export type OmoOmcsConfig = z.infer<typeof OmoOmcsConfigSchema>;
 
 ## Integration Points
 
-- **Agent Registry**: `/home/calvin/workspace/omo-omcs/src/agents/` - Agent definitions use config
-- **Plugin Handlers**: `/home/calvin/workspace/omo-omcs/src/plugin-handlers/` - Applies config to OpenCode agents
+- **Agent Registry**: `/home/calvin/workspace/OMCO/src/agents/` - Agent definitions use config
+- **Plugin Handlers**: `/home/calvin/workspace/OMCO/src/plugin-handlers/` - Applies config to OpenCode agents
 - **Skills**: Config controls which skills are enabled/disabled
 
 ## Design Principles

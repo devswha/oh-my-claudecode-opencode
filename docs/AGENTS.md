@@ -4,11 +4,11 @@
 
 ## Porting Context
 
-oh-my-claudecode와의 차이점 및 마이그레이션 가이드 문서. oh-my-claudecode 사용자가 omo-omcs로 전환할 때 필요한 정보, 기능 동등성 상태, 알려진 제약사항(Stop hook 부재 등), 마이그레이션 가이드가 포함되어 있다. ROADMAP.md는 포팅 진행 상황을 추적한다.
+oh-my-claudecode와의 차이점 및 마이그레이션 가이드 문서. oh-my-claudecode 사용자가 OMCO로 전환할 때 필요한 정보, 기능 동등성 상태, 알려진 제약사항(Stop hook 부재 등), 마이그레이션 가이드가 포함되어 있다. ROADMAP.md는 포팅 진행 상황을 추적한다.
 
 ## Overview
 
-This directory contains project documentation, roadmaps, and planning documents for omo-omcs development.
+This directory contains project documentation, roadmaps, and planning documents for OMCO development.
 
 ## Key Files
 
@@ -59,7 +59,7 @@ This directory contains project documentation, roadmaps, and planning documents 
 oh-my-claudecode (Claude Code):
   User stops → Stop hook intercepts → Returns {continue: false} → Blocked
 
-omo-omcs (OpenCode):
+OMCO (OpenCode):
   User stops → Session idle → Detected after delay → Prompt injected → Resumes
 ```
 
@@ -200,20 +200,20 @@ omo-omcs (OpenCode):
 
 ### Naming Changes (v3.0.11)
 
-| oh-my-claudecode | omo-omcs | Reason |
+| oh-my-claudecode | OMCO | Reason |
 |------------------|----------|--------|
 | `oracle` | `architect` | More descriptive |
 | `librarian` | `researcher` | Clearer role |
 | `frontend-engineer` | `designer` | Better scope |
 | `document-writer` | `writer` | Simpler |
-| `sisyphus-junior` | `executor` | More professional |
+| `omco-executor` | `executor` | More professional |
 | `multimodal-looker` | `vision` | Clearer capability |
 | `metis` | `analyst` | More recognizable |
 | `momus` | `critic` | Clearer role |
 
 ### Feature Parity Status
 
-| Feature | oh-my-claudecode | omo-omcs | Status |
+| Feature | oh-my-claudecode | OMCO | Status |
 |---------|------------------|----------|--------|
 | Ultrawork Mode | ✅ | ✅ | ✅ Complete |
 | Ralph Loop | ✅ | ✅ | ✅ Complete |
@@ -228,13 +228,13 @@ omo-omcs (OpenCode):
 
 ### Migration Guide
 
-1. **Install omo-omcs**:
+1. **Install OMCO**:
    ```bash
-   npm install oh-my-ssalsyphus
+   npm install oh-my-claudecode-opencode
    ```
 
 2. **Update config**:
-   - Rename `.claude/omo-omcs.json` → `.opencode/omo-omcs.json`
+   - Rename `.claude/OMCO.json` → `.opencode/OMCO.json`
    - Update agent names (oracle → architect, etc.)
 
 3. **Update commands**:
@@ -279,9 +279,9 @@ Track issues in roadmap:
 
 ## Integration Points
 
-- **Source Code**: `/home/calvin/workspace/omo-omcs/src/` - Documented implementation
-- **Tests**: `/home/calvin/workspace/omo-omcs/tests/` - Test coverage tracking
-- **Package**: `/home/calvin/workspace/omo-omcs/package.json` - Version info
+- **Source Code**: `/home/calvin/workspace/OMCO/src/` - Documented implementation
+- **Tests**: `/home/calvin/workspace/OMCO/tests/` - Test coverage tracking
+- **Package**: `/home/calvin/workspace/OMCO/package.json` - Version info
 
 ## Future Documentation
 

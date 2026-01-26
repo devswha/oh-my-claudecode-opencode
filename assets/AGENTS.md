@@ -4,30 +4,30 @@
 
 ## Porting Context
 
-oh-my-claudecode 설정 스키마를 OpenCode 형식으로 변환한 JSON 스키마. omo-omcs.schema.json은 oh-my-claudecode의 설정 스키마를 기반으로 하며, OpenCode 환경에 맞게 조정되었다. IDE 자동완성 및 검증 지원을 제공한다.
+oh-my-claudecode 설정 스키마를 OpenCode 형식으로 변환한 JSON 스키마. OMCO.schema.json은 oh-my-claudecode의 설정 스키마를 기반으로 하며, OpenCode 환경에 맞게 조정되었다. IDE 자동완성 및 검증 지원을 제공한다.
 
 ## Overview
 
-This directory contains static project assets, primarily the JSON schema definition for omo-omcs configuration validation.
+This directory contains static project assets, primarily the JSON schema definition for OMCO configuration validation.
 
 ## Key Files
 
-### `omo-omcs.schema.json`
+### `OMCO.schema.json`
 **Purpose**: JSON Schema for configuration file validation
 **Schema Version**: Draft-07
-**Usage**: Provides IDE autocomplete and validation for `.opencode/omo-omcs.json`
+**Usage**: Provides IDE autocomplete and validation for `.opencode/OMCO.json`
 
 ## Schema Structure
 
 ### Root Configuration Object
 
-The schema defines a comprehensive configuration structure for the omo-omcs plugin:
+The schema defines a comprehensive configuration structure for the OMCO plugin:
 
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "omo-omcs Configuration",
-  "description": "Configuration schema for Oh My OpenCode Sisyphus plugin",
+  "title": "OMCO Configuration",
+  "description": "Configuration schema for oh-my-claudecode-opencode (OMCO) plugin",
   "type": "object"
 }
 ```
@@ -127,7 +127,7 @@ Enable schema validation in VSCode:
 1. **Option 1: In config file**
    ```json
    {
-     "$schema": "node_modules/oh-my-ssalsyphus/assets/omo-omcs.schema.json",
+     "$schema": "node_modules/oh-my-claudecode-opencode/assets/OMCO.schema.json",
      "disabled_hooks": []
    }
    ```
@@ -137,8 +137,8 @@ Enable schema validation in VSCode:
    {
      "json.schemas": [
        {
-         "fileMatch": [".opencode/omo-omcs.json"],
-         "url": "./node_modules/oh-my-ssalsyphus/assets/omo-omcs.schema.json"
+         "fileMatch": [".opencode/OMCO.json"],
+         "url": "./node_modules/oh-my-claudecode-opencode/assets/OMCO.schema.json"
        }
      ]
    }
@@ -155,7 +155,7 @@ Enable schema validation in VSCode:
 ### Valid Configuration
 ```json
 {
-  "$schema": "node_modules/oh-my-ssalsyphus/assets/omo-omcs.schema.json",
+  "$schema": "node_modules/oh-my-claudecode-opencode/assets/OMCO.schema.json",
   "disabled_hooks": ["agent-usage-reminder"],
   "background_task": {
     "max_concurrent": 8,
@@ -214,7 +214,7 @@ When adding new config options:
    });
    ```
 
-2. **Add to JSON schema** (`assets/omo-omcs.schema.json`):
+2. **Add to JSON schema** (`assets/OMCO.schema.json`):
    ```json
    {
      "properties": {
@@ -249,7 +249,7 @@ The schema is exported via package.json:
 ```json
 {
   "exports": {
-    "./schema.json": "./assets/omo-omcs.schema.json"
+    "./schema.json": "./assets/OMCO.schema.json"
   }
 }
 ```
@@ -257,7 +257,7 @@ The schema is exported via package.json:
 Usage in user projects:
 ```json
 {
-  "$schema": "node_modules/oh-my-ssalsyphus/schema.json"
+  "$schema": "node_modules/oh-my-claudecode-opencode/schema.json"
 }
 ```
 
@@ -271,15 +271,15 @@ npm install -g ajv-cli
 
 # Validate config
 ajv validate \
-  -s node_modules/oh-my-ssalsyphus/assets/omo-omcs.schema.json \
-  -d .opencode/omo-omcs.json
+  -s node_modules/oh-my-claudecode-opencode/assets/OMCO.schema.json \
+  -d .opencode/OMCO.json
 ```
 
 ### Programmatic Validation
 
 ```typescript
 import Ajv from 'ajv';
-import schema from 'oh-my-ssalsyphus/schema.json';
+import schema from 'oh-my-claudecode-opencode/schema.json';
 
 const ajv = new Ajv();
 const validate = ajv.compile(schema);
@@ -326,9 +326,9 @@ Use relative paths from project root:
 
 ## Integration Points
 
-- **Config Loader**: `/home/calvin/workspace/omo-omcs/src/config/` - Uses Zod for runtime validation
-- **Documentation**: `/home/calvin/workspace/omo-omcs/docs/` - Schema usage in README
-- **Tests**: `/home/calvin/workspace/omo-omcs/tests/` - Schema validation tests
+- **Config Loader**: `/home/calvin/workspace/OMCO/src/config/` - Uses Zod for runtime validation
+- **Documentation**: `/home/calvin/workspace/OMCO/docs/` - Schema usage in README
+- **Tests**: `/home/calvin/workspace/OMCO/tests/` - Schema validation tests
 
 ## Future Enhancements
 

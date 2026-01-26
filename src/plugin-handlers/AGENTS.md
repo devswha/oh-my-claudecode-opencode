@@ -8,14 +8,14 @@ oh-my-claudecode의 에이전트/명령어 등록 시스템을 OpenCode config h
 
 ## Overview
 
-This directory contains the OpenCode plugin integration layer. It handles agent registration, slash command setup, and configuration merging between omo-omcs and OpenCode.
+This directory contains the OpenCode plugin integration layer. It handles agent registration, slash command setup, and configuration merging between OMCO and OpenCode.
 
 ## Architecture
 
-The plugin handlers bridge omo-omcs's agent system with OpenCode's plugin API:
-- **Agent registration**: Convert omo-omcs agents → OpenCode subagents
+The plugin handlers bridge OMCO's agent system with OpenCode's plugin API:
+- **Agent registration**: Convert OMCO agents → OpenCode subagents
 - **Command registration**: Define slash commands (`/ultrawork`, `/ralph`, etc.)
-- **Config merging**: Apply omo-omcs config to OpenCode config
+- **Config merging**: Apply OMCO config to OpenCode config
 - **Model routing**: Map agent definitions to OpenCode agent configs
 
 ## Key Files
@@ -28,7 +28,7 @@ The plugin handlers bridge omo-omcs's agent system with OpenCode's plugin API:
 ### `config-handler.ts`
 **Purpose**: Main plugin configuration handler
 **Exports**:
-- `registerAgents(input)` - Register all omo-omcs agents with OpenCode
+- `registerAgents(input)` - Register all OMCO agents with OpenCode
 - `registerCommands(input)` - Register slash commands
 - `SLASH_COMMANDS` - Command definitions
 
@@ -41,7 +41,7 @@ The plugin handlers bridge omo-omcs's agent system with OpenCode's plugin API:
 | `/ultrawork` | Maximum intensity execution | - | Ultrawork mode with parallel everything |
 | `/ralph` | Persistent task completion | - | Ralph loop with iteration tracking |
 | `/ralph-init` | Initialize PRD for structured ralph | - | PRD setup workflow |
-| `/update-ssalsyphus` | Update to latest version | - | npm install with latest version |
+| `/update-omco` | Update to latest version | - | npm install with latest version |
 | `/cancel-ralph` | Cancel active ralph loop | - | Stop ralph iteration |
 
 ### Command Structure
@@ -64,7 +64,7 @@ template: `Execute this task: $ARGUMENTS`
 ## Agent Registration
 
 ### Registration Flow
-1. Load omo-omcs config via `loadConfig()`
+1. Load OMCO config via `loadConfig()`
 2. For each agent definition:
    - Extract model, temperature, top_p from config
    - Merge with agent's system prompt
@@ -90,7 +90,7 @@ interface AgentConfig {
 ```
 
 ### Config Merging Priority
-1. **omo-omcs config file** (highest)
+1. **OMCO config file** (highest)
 2. **Agent definition defaults**
 3. **OpenCode defaults** (lowest)
 
@@ -226,9 +226,9 @@ $ARGUMENTS
 
 ## Integration Points
 
-- **Agent System**: `/home/calvin/workspace/omo-omcs/src/agents/` - Source of agent definitions
-- **Config System**: `/home/calvin/workspace/omo-omcs/src/config/` - Configuration loading
-- **Prompts**: `/home/calvin/workspace/omo-omcs/src/prompts/` - Template source for commands
+- **Agent System**: `/home/calvin/workspace/OMCO/src/agents/` - Source of agent definitions
+- **Config System**: `/home/calvin/workspace/OMCO/src/config/` - Configuration loading
+- **Prompts**: `/home/calvin/workspace/OMCO/src/prompts/` - Template source for commands
 - **OpenCode SDK**: `@opencode-ai/plugin` - Plugin API integration
 
 ## Implementation Details
@@ -265,7 +265,7 @@ for (const [name, definition] of agents.entries()) {
 ## Design Principles
 
 1. **Separation of concerns**: Handlers only bridge, don't implement logic
-2. **Config-driven**: All behavior configurable via omo-omcs.json
+2. **Config-driven**: All behavior configurable via OMCO.json
 3. **Type safety**: Leverage OpenCode SDK types
 4. **Logging**: Debug-level logging for troubleshooting
 5. **Graceful fallbacks**: Missing config = use defaults

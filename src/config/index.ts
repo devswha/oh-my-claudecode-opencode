@@ -156,7 +156,7 @@ const OmoOmcsConfigSchema = z.object({
   context_recovery: ContextRecoveryConfigSchema.optional(),
   edit_error_recovery: EditErrorRecoveryConfigSchema.optional(),
   tui_status: TuiStatusConfigSchema.optional(),
-  sisyphus_agent: z.object({
+  omco_agent: z.object({
     disabled: z.boolean().optional(),
     planner_enabled: z.boolean().optional(),
     replace_plan: z.boolean().optional(),
@@ -326,7 +326,7 @@ export function loadConfig(directory: string): OmoOmcsConfig {
       delegationEnforcement: 'warn',
       auditLogEnabled: true,
     },
-    sisyphus_agent: {
+    omco_agent: {
       disabled: false,
     },
   };

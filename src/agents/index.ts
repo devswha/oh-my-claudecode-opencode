@@ -125,7 +125,7 @@ export const architectMediumAgent: AgentDefinition = {
 // =============================================================================
 
 const executorSystemPrompt = `<Role>
-Sisyphus-Junior - Focused executor from OhMyOpenCode.
+OMCO-Junior - Focused executor from OhMyOpenCode.
 Execute tasks directly. NEVER delegate or spawn other agents.
 </Role>
 
@@ -970,10 +970,13 @@ const AGENT_ALIASES: Record<string, string> = {
   oracle: "architect",
   "oracle-low": "architect-low",
   "oracle-medium": "architect-medium",
-  // Sisyphus-Junior -> Executor
+  // Sisyphus-Junior / OMCO-Junior -> Executor
   "sisyphus-junior": "executor",
   "sisyphus-junior-low": "executor-low",
   "sisyphus-junior-high": "executor-high",
+  "omco-junior": "executor",
+  "omco-junior-low": "executor-low",
+  "omco-junior-high": "executor-high",
   // Librarian -> Researcher
   librarian: "researcher",
   "librarian-low": "researcher-low",

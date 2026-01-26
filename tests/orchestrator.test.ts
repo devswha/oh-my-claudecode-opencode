@@ -20,7 +20,7 @@ import {
 
 // Mock config for testing
 const mockPluginConfig: OmoOmcsConfig = {
-  sisyphus_agent: {
+  omco_agent: {
     disabled: false,
   },
   model_mapping: {
@@ -92,7 +92,7 @@ describe("Orchestrator Integration", () => {
       expect(getCanonicalName("oracle")).toBe("architect");
       expect(getCanonicalName("architect")).toBe("architect");
       expect(getCanonicalName("librarian")).toBe("researcher");
-      expect(getCanonicalName("sisyphus-junior")).toBe("executor");
+      expect(getCanonicalName("omco-junior")).toBe("executor");
     });
 
     it("should have all expected tier variants", () => {
@@ -207,7 +207,7 @@ describe("Orchestrator Integration", () => {
       } as unknown as PluginInput;
     });
 
-    it("should register Ssalsyphus as default agent", async () => {
+    it("should register OMCO as default agent", async () => {
       const handler = createConfigHandler({
         ctx: mockContext,
         pluginConfig: mockPluginConfig,
@@ -215,9 +215,9 @@ describe("Orchestrator Integration", () => {
 
       await handler(mockConfig);
 
-      expect(mockConfig.default_agent).toBe("Ssalsyphus");
-      expect(mockConfig.agent?.["Ssalsyphus"]).toBeDefined();
-      expect(mockConfig.agent?.["Ssalsyphus"]?.mode).toBe("primary");
+      expect(mockConfig.default_agent).toBe("OMCO");
+      expect(mockConfig.agent?.["OMCO"]).toBeDefined();
+      expect(mockConfig.agent?.["OMCO"]?.mode).toBe("primary");
     });
 
     it("should register all subagent types", async () => {
@@ -314,10 +314,10 @@ describe("Orchestrator Integration", () => {
       expect(mockConfig.command?.["ralph-loop"]).toBeDefined(); // Should still be there
     });
 
-    it("should not register agents when sisyphus_agent.disabled is true", async () => {
+    it("should not register agents when omco_agent.disabled is true", async () => {
       const disabledConfig: OmoOmcsConfig = {
         ...mockPluginConfig,
-        sisyphus_agent: {
+        omco_agent: {
           disabled: true,
         },
       };
@@ -330,7 +330,7 @@ describe("Orchestrator Integration", () => {
       await handler(mockConfig);
 
       expect(mockConfig.default_agent).toBeUndefined();
-      expect(mockConfig.agent?.["Ssalsyphus"]).toBeUndefined();
+      expect(mockConfig.agent?.["OMCO"]).toBeUndefined();
     });
 
     it("should include agent system prompts in subagent configs", async () => {
@@ -348,7 +348,7 @@ describe("Orchestrator Integration", () => {
 
       const executorPrompt = mockConfig.agent?.["executor"]?.prompt;
       expect(executorPrompt).toBeDefined();
-      expect(executorPrompt).toContain("Sisyphus-Junior");
+      expect(executorPrompt).toContain("OMCO-Junior");
     });
   });
 
@@ -786,8 +786,8 @@ describe("Orchestrator Integration", () => {
     });
   });
 
-  describe("Ssalsyphus Agent Configuration", () => {
-    it("should include agent list in Ssalsyphus prompt", async () => {
+  describe("OMCO Agent Configuration", () => {
+    it("should include agent list in OMCO prompt", async () => {
       const mockConfig: OpenCodeConfig = {
         agent: {},
         command: {},
@@ -805,14 +805,14 @@ describe("Orchestrator Integration", () => {
 
       await handler(mockConfig);
 
-      const ssalsyphusPrompt = mockConfig.agent?.["Ssalsyphus"]?.prompt;
-      expect(ssalsyphusPrompt).toBeDefined();
-      expect(ssalsyphusPrompt).toContain("architect");
-      expect(ssalsyphusPrompt).toContain("executor");
-      expect(ssalsyphusPrompt).toContain("Available_Subagents");
+      const omcoPrompt = mockConfig.agent?.["OMCO"]?.prompt;
+      expect(omcoPrompt).toBeDefined();
+      expect(omcoPrompt).toContain("architect");
+      expect(omcoPrompt).toContain("executor");
+      expect(omcoPrompt).toContain("Available_Subagents");
     });
 
-    it("should set Ssalsyphus as primary mode", async () => {
+    it("should set OMCO as primary mode", async () => {
       const mockConfig: OpenCodeConfig = {
         agent: {},
         command: {},
@@ -830,10 +830,10 @@ describe("Orchestrator Integration", () => {
 
       await handler(mockConfig);
 
-      expect(mockConfig.agent?.["Ssalsyphus"]?.mode).toBe("primary");
+      expect(mockConfig.agent?.["OMCO"]?.mode).toBe("primary");
     });
 
-    it("should have Ssalsyphus description", async () => {
+    it("should have OMCO description", async () => {
       const mockConfig: OpenCodeConfig = {
         agent: {},
         command: {},
@@ -851,7 +851,7 @@ describe("Orchestrator Integration", () => {
 
       await handler(mockConfig);
 
-      expect(mockConfig.agent?.["Ssalsyphus"]?.description).toContain(
+      expect(mockConfig.agent?.["OMCO"]?.description).toContain(
         "orchestrator"
       );
     });

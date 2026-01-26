@@ -1,14 +1,14 @@
 <!-- Parent: ../AGENTS.md -->
 
-# omo-omcs Source Architecture
+# OMCO Source Architecture
 
-**Project**: oh-my-ssalsyphus (omo-omcs) - An OpenCode plugin for orchestrating specialized AI agents
+**Project**: oh-my-claudecode-opencode (OMCO) - An OpenCode plugin for orchestrating specialized AI agents
 **Version**: v3.0.11
 **Purpose**: Multi-agent orchestration system for autonomous task execution with persistence and verification
 
 ## Porting Context
 
-이 디렉토리는 oh-my-claudecode의 핵심 기능을 OpenCode 플러그인 API로 포팅한 구현체를 포함한다. oh-my-claudecode는 Claude Code CLI를 위한 원본 플러그인이며, omo-omcs는 OpenCode + GitHub Copilot + Claude 환경에서 동일한 멀티-에이전트 오케스트레이션 경험을 제공하는 것을 목표로 한다. oh-my-claudecode v3.3.4와의 기능 동등성을 목표로 개발되었다.
+이 디렉토리는 oh-my-claudecode의 핵심 기능을 OpenCode 플러그인 API로 포팅한 구현체를 포함한다. oh-my-claudecode는 Claude Code CLI를 위한 원본 플러그인이며, OMCO는 OpenCode + GitHub Copilot + Claude 환경에서 동일한 멀티-에이전트 오케스트레이션 경험을 제공하는 것을 목표로 한다. oh-my-claudecode v3.3.4와의 기능 동등성을 목표로 개발되었다.
 
 ## Directory Structure
 
@@ -95,7 +95,7 @@ src/
 - `executor` (Sonnet) - Direct task implementation
 - `executor-high` (Opus) - Complex multi-file refactoring
 - `executor-low` (Haiku) - Simple well-defined tasks
-- **Backward compatibility**: `sisyphus-junior`, `sisyphus-junior-high`, `sisyphus-junior-low`
+- **Backward compatibility**: `omco-executor`, `omco-executor-high`, `omco-executor-low`
 
 #### Explore Agents (Codebase Search)
 - `explore` (Haiku) - Fast file/pattern discovery
@@ -142,10 +142,10 @@ src/
 **Responsibility**: Load and validate configuration
 
 **Configuration Sources** (in priority order):
-1. `.opencode/omo-omcs.jsonc` (project-level)
-2. `.opencode/omo-omcs.json` (project-level)
-3. `~/.config/opencode/omo-omcs.jsonc` (user global)
-4. `~/.config/opencode/omo-omcs.json` (user global)
+1. `.opencode/OMCO.jsonc` (project-level)
+2. `.opencode/OMCO.json` (project-level)
+3. `~/.config/opencode/OMCO.jsonc` (user global)
+4. `~/.config/opencode/OMCO.json` (user global)
 
 **Config Schema**:
 ```typescript
@@ -171,7 +171,7 @@ src/
     enabled?: boolean
     default_max_iterations?: number      // 1-1000 (default: 100)
   }
-  sisyphus_agent?: {
+  omco_agent?: {
     disabled?: boolean
     planner_enabled?: boolean
     replace_plan?: boolean
@@ -396,7 +396,7 @@ interface UserStory {
 **logger.ts** - Debug logging
 - Controlled via `DEBUG=true` or `OMO_OMCS_DEBUG=true`
 - Functions: `log()`, `warn()`, `error()`
-- Output format: `[omo-omcs] {ISO timestamp} {message} {data}`
+- Output format: `[OMCO] {ISO timestamp} {message} {data}`
 
 **session-state.ts** - Session-scoped state
 - Temporary state for current session only
@@ -622,7 +622,7 @@ cat .omc/notepads/{plan-name}/notepad.md
 
 | File/Directory | Purpose | Location |
 |---|---|---|
-| Configuration | Plugin settings | `.opencode/omo-omcs.jsonc` |
+| Configuration | Plugin settings | `.opencode/OMCO.jsonc` |
 | Ralph state | Persistence loop | `.omc/ralph-state.json` |
 | Ultrawork state | Parallel tasks | `.omc/ultrawork-state.json` |
 | Verification state | Verification attempts | `.omc/verification-state.json` |

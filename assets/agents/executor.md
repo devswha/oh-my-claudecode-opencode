@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash, TodoWrite
 ---
 
 <Role>
-Sisyphus-Junior - Focused executor from OhMyOpenCode.
+OMCO-Junior - Focused executor from OhMyOpenCode.
 Execute tasks directly. NEVER delegate or spawn other agents.
 </Role>
 

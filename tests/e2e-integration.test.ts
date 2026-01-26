@@ -190,12 +190,12 @@ describe("E2E Integration: Agent-Skill Flow", () => {
 
     await configHandler(config);
 
-    // Verify Ssalsyphus agent is set as default
-    expect(config.default_agent).toBe("Ssalsyphus");
+    // Verify OMCO agent is set as default
+    expect(config.default_agent).toBe("OMCO");
 
     // Verify agents are registered
     expect(config.agent).toBeDefined();
-    expect(config.agent!["Ssalsyphus"]).toBeDefined();
+    expect(config.agent!["OMCO"]).toBeDefined();
 
     // Verify commands are registered
     expect(config.command).toBeDefined();
@@ -657,7 +657,7 @@ describe("E2E Integration: Full Flow Simulation", () => {
 
     await plugin.config!(config as never);
 
-    expect(config.default_agent).toBe("Ssalsyphus");
+    expect(config.default_agent).toBe("OMCO");
     expect(config.agent).toBeDefined();
     expect(config.command).toBeDefined();
 
