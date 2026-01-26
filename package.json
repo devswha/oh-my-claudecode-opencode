@@ -1,6 +1,6 @@
 {
   "name": "oh-my-claudecode-opencode",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "OpenCode port of oh-my-claudecode - Multi-agent orchestration plugin (omco)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
   "files": [
     "dist",
     "assets",
-    "bin"
+    "bin",
+    "scripts"
   ],
   "exports": {
     ".": {
@@ -26,6 +27,7 @@
     "build:watch": "bun build src/index.ts --outdir dist --target bun --format esm --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run clean && bun run build",
+    "postinstall": "node scripts/postinstall.js || true",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:e2e": "vitest run --config tests/e2e/vitest.config.ts",
