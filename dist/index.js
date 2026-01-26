@@ -21846,6 +21846,22 @@ function createBackgroundManager(ctx, config2, modelService) {
   const tasks = new Map;
   const defaultConcurrency = config2?.defaultConcurrency ?? 5;
   const modelCache = new Map;
+  const TASK_MAX_AGE_MS = 60 * 60 * 1000;
+  const cleanupOldTasks = () => {
+    const now = Date.now();
+    for (const [id, task] of tasks) {
+      if (task.status !== "running" && task.completedAt) {
+        if (now - task.completedAt > TASK_MAX_AGE_MS) {
+          tasks.delete(id);
+          log(`Cleaned up old task`, { taskId: id });
+        }
+      }
+    }
+  };
+  const cleanupInterval = setInterval(cleanupOldTasks, 10 * 60 * 1000);
+  if (cleanupInterval.unref) {
+    cleanupInterval.unref();
+  }
   const getRunningCount = (parentSessionID) => {
     let count = 0;
     for (const task of tasks.values()) {
@@ -21982,7 +21998,9 @@ ${prompt}` : prompt;
             variant: "success",
             duration: 3000
           }
-        }).catch(() => {});
+        }).catch((err) => {
+          log(`Toast notification failed`, { taskId, error: String(err) });
+        });
       } catch (err) {
         task.status = "failed";
         task.error = String(err);

@@ -39,6 +39,11 @@ export interface BackgroundManager {
 
 let taskCounter = 0;
 
+/**
+ * Generate a compact, unique task ID
+ * Format: bg_{timestamp_base36}_{counter_base36}
+ * Base36 encoding uses 0-9 and a-z for compact representation
+ */
 function generateTaskId(): string {
   taskCounter++;
   return `bg_${Date.now().toString(36)}_${taskCounter.toString(36)}`;
@@ -51,9 +56,31 @@ export function createBackgroundManager(
 ): BackgroundManager {
   const tasks = new Map<string, BackgroundTask>();
   const defaultConcurrency = config?.defaultConcurrency ?? 5;
-  
+
   // Cache for parent session models to avoid repeated API calls
   const modelCache = new Map<string, ModelConfig>();
+
+  // Cleanup old completed tasks to prevent memory leak
+  // Removes tasks older than 1 hour that are no longer running
+  const TASK_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
+  const cleanupOldTasks = (): void => {
+    const now = Date.now();
+    for (const [id, task] of tasks) {
+      if (task.status !== "running" && task.completedAt) {
+        if (now - task.completedAt > TASK_MAX_AGE_MS) {
+          tasks.delete(id);
+          log(`Cleaned up old task`, { taskId: id });
+        }
+      }
+    }
+  };
+
+  // Run cleanup periodically (every 10 minutes)
+  const cleanupInterval = setInterval(cleanupOldTasks, 10 * 60 * 1000);
+  // Prevent interval from keeping Node.js alive
+  if (cleanupInterval.unref) {
+    cleanupInterval.unref();
+  }
 
   const getRunningCount = (parentSessionID?: string): number => {
     let count = 0;
@@ -264,7 +291,9 @@ export function createBackgroundManager(
             variant: "success" as const,
             duration: 3000,
           },
-        }).catch(() => {});
+        }).catch((err) => {
+          log(`Toast notification failed`, { taskId, error: String(err) });
+        });
 
       } catch (err) {
         task.status = "failed";
