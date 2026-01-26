@@ -4,12 +4,17 @@ import type { CategoryConfig, CategoriesConfig } from "./types";
 export interface ResolvedCategory {
   config: CategoryConfig;
   promptAppend: string;
-  tier: string;  // haiku, sonnet, or opus
+  /** Full provider/model string (e.g., "anthropic/claude-sonnet-4-5") */
+  model: string | undefined;
 }
 
 /**
  * Resolve a category name to its configuration.
  * Priority: user override > default category
+ *
+ * Model resolution priority:
+ * 1. userConfig.model (user override)
+ * 2. defaultConfig.model (category default)
  */
 export function resolveCategoryConfig(
   categoryName: string,
@@ -23,14 +28,15 @@ export function resolveCategoryConfig(
     return null;
   }
 
+  // Model priority: user override > category default
+  const model = userConfig?.model ?? defaultConfig?.model;
+
   // Merge configs: user overrides default
   const config: CategoryConfig = {
     ...defaultConfig,
     ...userConfig,
+    model,
   };
-
-  // Get tier from merged config (defaults to sonnet)
-  const tier = config.model ?? "sonnet";
 
   // Combine prompt appends
   let promptAppend = defaultPromptAppend;
@@ -40,7 +46,7 @@ export function resolveCategoryConfig(
       : userConfig.prompt_append;
   }
 
-  return { config, promptAppend, tier };
+  return { config, promptAppend, model };
 }
 
 /**

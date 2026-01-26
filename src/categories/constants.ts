@@ -183,38 +183,39 @@ Approach:
 
 /**
  * Default category configurations.
- * Uses abstract tier names (haiku/sonnet/opus) that will be resolved to actual provider/model by the model resolution service.
+ * Uses actual provider/model strings for zero-config operation.
+ * Users can override these in their omco.json config file.
  */
 export const DEFAULT_CATEGORIES: Record<string, CategoryConfig> = {
   "visual-engineering": {
-    model: "opus",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Frontend, UI/UX, design, styling, animation"
   },
   ultrabrain: {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "high",
     description: "Deep logical reasoning, complex architecture decisions requiring extensive analysis"
   },
   artistry: {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "max",
     description: "Highly creative/artistic tasks, novel ideas"
   },
   quick: {
-    model: "haiku",
+    model: "anthropic/claude-haiku-4-5",
     description: "Trivial tasks - single file changes, typo fixes, simple modifications"
   },
   "unspecified-low": {
-    model: "sonnet",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Tasks that don't fit other categories, moderate effort required"
   },
   "unspecified-high": {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "max",
     description: "Tasks that don't fit other categories, high effort required"
   },
   writing: {
-    model: "sonnet",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Documentation, prose, technical writing"
   }
 };

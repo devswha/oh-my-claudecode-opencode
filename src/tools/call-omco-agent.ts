@@ -7,6 +7,17 @@ import { resolveCategoryConfig, getAvailableCategories, CATEGORY_DESCRIPTIONS } 
 import type { ResolvedCategory } from "../categories/resolver";
 import type { CategoriesConfig } from "../categories/types";
 
+/**
+ * Parse a model string in "provider/model" format to ModelConfig
+ */
+function parseModelString(model: string): ModelConfig | undefined {
+  const parts = model.split("/");
+  if (parts.length >= 2) {
+    return { providerID: parts[0], modelID: parts.slice(1).join("/") };
+  }
+  return undefined;
+}
+
 export function createCallOmcoAgent(
   ctx: PluginInput,
   manager: BackgroundManager,
@@ -71,7 +82,7 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
       }
 
       let enhancedPrompt: string;
-      let tierForResolution: string | undefined;
+      let categoryModel: string | undefined;
       let agentTypeForLogging: string;
 
       if (category) {
@@ -89,10 +100,10 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
           ? `${resolved.promptAppend}\n\n---\n\n${prompt}`
           : prompt;
 
-        tierForResolution = resolved.tier;
+        categoryModel = resolved.model;
         agentTypeForLogging = `category:${category}`;
 
-        log(`[call-omco-agent] Using category delegation`, { category, tier: tierForResolution });
+        log(`[call-omco-agent] Using category delegation`, { category, model: categoryModel });
       } else {
         // Agent-based delegation (existing flow)
         const agent = getAgent(subagent_type!);
@@ -109,57 +120,35 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
       }
 
       // OMCO-003: Resolve model
-      // Priority: tier mapping (if configured) > parent session model
+      // For categories: use model directly from category config (zero-config)
+      // For agents: use tier mapping or parent session model
       const parentModel = await manager.getParentSessionModel(context.sessionID);
       let resolvedModel: ModelConfig | undefined = parentModel;
 
-      if (modelService) {
+      if (category && categoryModel) {
+        // Category-based delegation: parse model string directly
+        const parsed = parseModelString(categoryModel);
+        if (parsed) {
+          resolvedModel = parsed;
+          log(`[call-omco-agent] Using category model`, {
+            category,
+            providerID: parsed.providerID,
+            modelID: parsed.modelID,
+          });
+        } else {
+          // Model string is not in provider/model format - fall back to parent
+          log(`[call-omco-agent] Category model "${categoryModel}" not in provider/model format, using parent model`);
+        }
+      } else if (subagent_type && modelService) {
+        // Agent-based delegation: use tier mapping
         try {
-          if (category && tierForResolution) {
-            // Resolve by tier for category-based delegation
-            const categoryModel = modelService.resolveModelForCategory(tierForResolution, parentModel);
+          resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
 
-            if (categoryModel) {
-              resolvedModel = categoryModel;
-
-              if (resolvedModel && resolvedModel !== parentModel) {
-                log(`[call-omco-agent] Using tier-mapped model for category ${category}`, {
-                  tier: tierForResolution,
-                  providerID: resolvedModel.providerID,
-                  modelID: resolvedModel.modelID,
-                });
-              }
-            } else if (!parentModel) {
-              // No category model and no parent model - throw error
-              const errorMsg = `[OMCO] Cannot resolve model for category "${category}" (tier: ${tierForResolution}).\n\n` +
-                `No tier mapping configured. Run one of:\n` +
-                `  1. npx omco-setup (interactive setup)\n` +
-                `  2. Add tierDefaults to ~/.config/opencode/omco.json:\n` +
-                `     {\n` +
-                `       "model_mapping": {\n` +
-                `         "tierDefaults": {\n` +
-                `           "haiku": "openai/gpt-4o-mini",\n` +
-                `           "sonnet": "openai/gpt-4o",\n` +
-                `           "opus": "openai/o1"\n` +
-                `         }\n` +
-                `       }\n` +
-                `     }`;
-
-              return JSON.stringify({
-                status: "failed",
-                error: errorMsg,
-              });
-            }
-          } else if (subagent_type) {
-            // Resolve by agent for agent-based delegation
-            resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
-
-            if (resolvedModel && resolvedModel !== parentModel) {
-              log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
-                providerID: resolvedModel.providerID,
-                modelID: resolvedModel.modelID,
-              });
-            }
+          if (resolvedModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
+              providerID: resolvedModel.providerID,
+              modelID: resolvedModel.modelID,
+            });
           }
         } catch (err) {
           // Model resolution failed - return actionable error to user

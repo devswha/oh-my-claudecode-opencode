@@ -65,24 +65,24 @@ describe("Categories", () => {
     it("should resolve default categories", () => {
       const result = resolveCategoryConfig("quick");
       expect(result).not.toBeNull();
-      expect(result?.tier).toBe("haiku");
+      expect(result?.model).toBe("anthropic/claude-haiku-4-5");
     });
 
-    it("should return correct tier for each default category", () => {
-      const expectedTiers: Record<string, string> = {
-        "visual-engineering": "opus",
-        ultrabrain: "opus",
-        artistry: "opus",
-        quick: "haiku",
-        "unspecified-low": "sonnet",
-        "unspecified-high": "opus",
-        writing: "sonnet",
+    it("should return correct model for each default category", () => {
+      const expectedModels: Record<string, string> = {
+        "visual-engineering": "anthropic/claude-sonnet-4-5",
+        ultrabrain: "anthropic/claude-opus-4-5",
+        artistry: "anthropic/claude-opus-4-5",
+        quick: "anthropic/claude-haiku-4-5",
+        "unspecified-low": "anthropic/claude-sonnet-4-5",
+        "unspecified-high": "anthropic/claude-opus-4-5",
+        writing: "anthropic/claude-sonnet-4-5",
       };
 
-      for (const [name, expectedTier] of Object.entries(expectedTiers)) {
+      for (const [name, expectedModel] of Object.entries(expectedModels)) {
         const result = resolveCategoryConfig(name);
         expect(result).not.toBeNull();
-        expect(result?.tier).toBe(expectedTier);
+        expect(result?.model).toBe(expectedModel);
       }
     });
 
@@ -100,7 +100,7 @@ describe("Categories", () => {
     it("should include config in resolved result", () => {
       const result = resolveCategoryConfig("ultrabrain");
       expect(result?.config).toBeDefined();
-      expect(result?.config.model).toBe("opus");
+      expect(result?.config.model).toBe("anthropic/claude-opus-4-5");
       expect(result?.config.variant).toBe("high");
     });
 
@@ -108,13 +108,13 @@ describe("Categories", () => {
       it("should merge user category override with default", () => {
         const userCategories: CategoriesConfig = {
           quick: {
-            model: "sonnet", // Override haiku to sonnet
+            model: "openai/gpt-4o-mini", // Override to different provider
           },
         };
 
         const result = resolveCategoryConfig("quick", userCategories);
         expect(result).not.toBeNull();
-        expect(result?.tier).toBe("sonnet"); // User override takes effect
+        expect(result?.model).toBe("openai/gpt-4o-mini"); // User override takes effect
       });
 
       it("should append user-defined prompt_append to default prompt", () => {
@@ -133,7 +133,7 @@ describe("Categories", () => {
       it("should allow user to define new categories", () => {
         const userCategories: CategoriesConfig = {
           "my-custom-category": {
-            model: "haiku",
+            model: "google/gemini-2.0-flash",
             description: "My custom category",
             prompt_append: "Custom prompt for my category",
           },
@@ -141,20 +141,20 @@ describe("Categories", () => {
 
         const result = resolveCategoryConfig("my-custom-category", userCategories);
         expect(result).not.toBeNull();
-        expect(result?.tier).toBe("haiku");
+        expect(result?.model).toBe("google/gemini-2.0-flash");
         expect(result?.promptAppend).toBe("Custom prompt for my category");
       });
 
       it("should still resolve default categories with user categories present", () => {
         const userCategories: CategoriesConfig = {
           "my-custom-category": {
-            model: "haiku",
+            model: "google/gemini-2.0-flash",
           },
         };
 
         const result = resolveCategoryConfig("visual-engineering", userCategories);
         expect(result).not.toBeNull();
-        expect(result?.tier).toBe("opus");
+        expect(result?.model).toBe("anthropic/claude-sonnet-4-5");
       });
     });
   });

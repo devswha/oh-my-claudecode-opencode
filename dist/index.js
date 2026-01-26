@@ -34676,34 +34676,34 @@ Approach:
 </Category_Context>`;
 var DEFAULT_CATEGORIES = {
   "visual-engineering": {
-    model: "opus",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Frontend, UI/UX, design, styling, animation"
   },
   ultrabrain: {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "high",
     description: "Deep logical reasoning, complex architecture decisions requiring extensive analysis"
   },
   artistry: {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "max",
     description: "Highly creative/artistic tasks, novel ideas"
   },
   quick: {
-    model: "haiku",
+    model: "anthropic/claude-haiku-4-5",
     description: "Trivial tasks - single file changes, typo fixes, simple modifications"
   },
   "unspecified-low": {
-    model: "sonnet",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Tasks that don't fit other categories, moderate effort required"
   },
   "unspecified-high": {
-    model: "opus",
+    model: "anthropic/claude-opus-4-5",
     variant: "max",
     description: "Tasks that don't fit other categories, high effort required"
   },
   writing: {
-    model: "sonnet",
+    model: "anthropic/claude-sonnet-4-5",
     description: "Documentation, prose, technical writing"
   }
 };
@@ -34733,24 +34733,32 @@ function resolveCategoryConfig(categoryName, userCategories) {
   if (!defaultConfig && !userConfig) {
     return null;
   }
+  const model = userConfig?.model ?? defaultConfig?.model;
   const config3 = {
     ...defaultConfig,
-    ...userConfig
+    ...userConfig,
+    model
   };
-  const tier = config3.model ?? "sonnet";
   let promptAppend = defaultPromptAppend;
   if (userConfig?.prompt_append) {
     promptAppend = defaultPromptAppend ? defaultPromptAppend + `
 
 ` + userConfig.prompt_append : userConfig.prompt_append;
   }
-  return { config: config3, promptAppend, tier };
+  return { config: config3, promptAppend, model };
 }
 function getAvailableCategories(userCategories) {
   const allCategories = { ...DEFAULT_CATEGORIES, ...userCategories };
   return Object.keys(allCategories);
 }
 // src/tools/call-omco-agent.ts
+function parseModelString(model) {
+  const parts = model.split("/");
+  if (parts.length >= 2) {
+    return { providerID: parts[0], modelID: parts.slice(1).join("/") };
+  }
+  return;
+}
 function createCallOmcoAgent(ctx, manager, modelService, userCategories) {
   const agentNames = listAgentNames();
   const agentList = agentNames.map((name) => {
@@ -34798,7 +34806,7 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
         });
       }
       let enhancedPrompt;
-      let tierForResolution;
+      let categoryModel;
       let agentTypeForLogging;
       if (category) {
         const resolved = resolveCategoryConfig(category, userCategories);
@@ -34813,9 +34821,9 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
 ---
 
 ${prompt}` : prompt;
-        tierForResolution = resolved.tier;
+        categoryModel = resolved.model;
         agentTypeForLogging = `category:${category}`;
-        log(`[call-omco-agent] Using category delegation`, { category, tier: tierForResolution });
+        log(`[call-omco-agent] Using category delegation`, { category, model: categoryModel });
       } else {
         const agent = getAgent(subagent_type);
         if (!agent) {
@@ -34833,47 +34841,26 @@ ${prompt}`;
       }
       const parentModel = await manager.getParentSessionModel(context.sessionID);
       let resolvedModel = parentModel;
-      if (modelService) {
+      if (category && categoryModel) {
+        const parsed = parseModelString(categoryModel);
+        if (parsed) {
+          resolvedModel = parsed;
+          log(`[call-omco-agent] Using category model`, {
+            category,
+            providerID: parsed.providerID,
+            modelID: parsed.modelID
+          });
+        } else {
+          log(`[call-omco-agent] Category model "${categoryModel}" not in provider/model format, using parent model`);
+        }
+      } else if (subagent_type && modelService) {
         try {
-          if (category && tierForResolution) {
-            const categoryModel = modelService.resolveModelForCategory(tierForResolution, parentModel);
-            if (categoryModel) {
-              resolvedModel = categoryModel;
-              if (resolvedModel && resolvedModel !== parentModel) {
-                log(`[call-omco-agent] Using tier-mapped model for category ${category}`, {
-                  tier: tierForResolution,
-                  providerID: resolvedModel.providerID,
-                  modelID: resolvedModel.modelID
-                });
-              }
-            } else if (!parentModel) {
-              const errorMsg = `[OMCO] Cannot resolve model for category "${category}" (tier: ${tierForResolution}).
-
-` + `No tier mapping configured. Run one of:
-` + `  1. npx omco-setup (interactive setup)
-` + `  2. Add tierDefaults to ~/.config/opencode/omco.json:
-` + `     {
-` + `       "model_mapping": {
-` + `         "tierDefaults": {
-` + `           "haiku": "openai/gpt-4o-mini",
-` + `           "sonnet": "openai/gpt-4o",
-` + `           "opus": "openai/o1"
-` + `         }
-` + `       }
-` + `     }`;
-              return JSON.stringify({
-                status: "failed",
-                error: errorMsg
-              });
-            }
-          } else if (subagent_type) {
-            resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
-            if (resolvedModel && resolvedModel !== parentModel) {
-              log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
-                providerID: resolvedModel.providerID,
-                modelID: resolvedModel.modelID
-              });
-            }
+          resolvedModel = modelService.resolveModelForAgentOrThrow(subagent_type, parentModel);
+          if (resolvedModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Using tier-mapped model for ${subagent_type}`, {
+              providerID: resolvedModel.providerID,
+              modelID: resolvedModel.modelID
+            });
           }
         } catch (err) {
           return JSON.stringify({
@@ -35053,7 +35040,7 @@ class ModelResolver {
 }
 
 // src/tools/model-resolution-service.ts
-function parseModelString(model) {
+function parseModelString2(model) {
   if (!model.includes("/")) {
     return;
   }
@@ -35083,7 +35070,7 @@ function createModelResolutionService(modelMappingConfig, agentOverrides) {
     }
     const agentOverride = agentOverrides?.[agentName];
     const resolution = resolver.resolve(agentName, effectiveTier, agentOverride);
-    const modelConfig = parseModelString(resolution.model);
+    const modelConfig = parseModelString2(resolution.model);
     if (modelConfig) {
       if (debugLogging) {
         log(`[model-resolution] Resolved ${agentName}: ${resolution.model} (source: ${resolution.source})`);
@@ -35135,7 +35122,7 @@ Tier mapping is configured but no fallback model available.
     const tierDefaults2 = resolver.getTierDefaults();
     const mappedModel = tierDefaults2[categoryTier];
     if (mappedModel) {
-      const modelConfig = parseModelString(mappedModel);
+      const modelConfig = parseModelString2(mappedModel);
       if (modelConfig) {
         if (debugLogging) {
           log(`[model-resolution] Resolved category tier "${categoryTier}": ${mappedModel}`);

@@ -36,7 +36,8 @@ export declare const UNSPECIFIED_HIGH_CATEGORY_PROMPT_APPEND = "<Category_Contex
 export declare const WRITING_CATEGORY_PROMPT_APPEND = "<Category_Context>\nYou are working on WRITING / PROSE tasks.\n\nWordsmith mindset:\n- Clear, flowing prose\n- Appropriate tone and voice\n- Engaging and readable\n- Proper structure and organization\n\nApproach:\n- Understand the audience\n- Draft with care\n- Polish for clarity and impact\n- Documentation, READMEs, articles, technical writing\n</Category_Context>";
 /**
  * Default category configurations.
- * Uses abstract tier names (haiku/sonnet/opus) that will be resolved to actual provider/model by the model resolution service.
+ * Uses actual provider/model strings for zero-config operation.
+ * Users can override these in their omco.json config file.
  */
 export declare const DEFAULT_CATEGORIES: Record<string, CategoryConfig>;
 /**
