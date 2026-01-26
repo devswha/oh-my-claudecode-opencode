@@ -21,8 +21,12 @@ That's it. The AI will handle the rest.
 ### One-liner (If you insist on doing it yourself)
 
 ```bash
-mkdir -p ~/.opencode/plugins && cd ~/.opencode && npm install oh-my-claudecode-opencode@latest && echo 'import OmoOmcsPlugin from "oh-my-claudecode-opencode";
-export default OmoOmcsPlugin;' > plugins/omco.ts && echo "✅ Restart OpenCode to activate OMCO"
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode@latest && cat > opencode.json << 'EOF'
+{
+  "plugin": ["oh-my-claudecode-opencode"]
+}
+EOF
+echo "✅ Restart OpenCode to activate OMCO"
 ```
 
 ### Magic Keywords
@@ -103,15 +107,15 @@ This project **ports the powerful features** of [oh-my-claudecode](https://githu
 ### Manual Installation
 
 ```bash
-# Install in OpenCode home directory
-cd ~/.opencode
+# Install in OpenCode config directory
+cd ~/.config/opencode
 npm install oh-my-claudecode-opencode
 
-# Create plugin loader
-mkdir -p plugins
-cat > plugins/omco.ts << 'EOF'
-import OmoOmcsPlugin from "oh-my-claudecode-opencode";
-export default OmoOmcsPlugin;
+# Register plugin in opencode.json
+cat > opencode.json << 'EOF'
+{
+  "plugin": ["oh-my-claudecode-opencode"]
+}
 EOF
 
 # Restart OpenCode to activate

@@ -12,34 +12,46 @@ Tell your AI assistant:
 
 ## Installation Steps (For AI Agents)
 
-### Step 1: Create OpenCode plugins directory
+### Step 1: Install the package globally in OpenCode config
 
 ```bash
-mkdir -p ~/.opencode/plugins
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode@latest
 ```
 
-### Step 2: Install the package
+### Step 2: Register the plugin in opencode.json
+
+Create or update `~/.config/opencode/opencode.json`:
 
 ```bash
-cd ~/.opencode && npm install oh-my-claudecode-opencode@latest
-```
-
-### Step 3: Create plugin loader
-
-```bash
-cat > ~/.opencode/plugins/omco.ts << 'EOF'
-import OmoOmcsPlugin from "oh-my-claudecode-opencode";
-export default OmoOmcsPlugin;
+# If opencode.json doesn't exist, create it:
+cat > ~/.config/opencode/opencode.json << 'EOF'
+{
+  "plugin": [
+    "oh-my-claudecode-opencode"
+  ]
+}
 EOF
 ```
 
-### Step 4: Verify installation
+If `opencode.json` already exists, add `"oh-my-claudecode-opencode"` to the `"plugin"` array:
 
-```bash
-npm list oh-my-claudecode-opencode --depth=0
+```json
+{
+  "plugin": [
+    "existing-plugin",
+    "oh-my-claudecode-opencode"
+  ]
+}
 ```
 
-### Step 5: Restart OpenCode
+### Step 3: Verify installation
+
+```bash
+cd ~/.config/opencode && npm list oh-my-claudecode-opencode --depth=0
+cat ~/.config/opencode/opencode.json
+```
+
+### Step 4: Restart OpenCode
 
 Tell the user to restart OpenCode (Ctrl+C and reopen) to load the plugin.
 
@@ -53,17 +65,23 @@ After restart, the OMCO agent should appear in the Tab menu. Test with:
 
 ## One-liner Install
 
-For convenience:
+For new installations (creates opencode.json):
 
 ```bash
-mkdir -p ~/.opencode/plugins && cd ~/.opencode && npm install oh-my-claudecode-opencode@latest && echo 'import OmoOmcsPlugin from "oh-my-claudecode-opencode";
-export default OmoOmcsPlugin;' > plugins/omco.ts && echo "✅ OMCO installed! Restart OpenCode to activate."
+cd ~/.config/opencode && npm install oh-my-claudecode-opencode@latest && cat > opencode.json << 'EOF'
+{
+  "plugin": [
+    "oh-my-claudecode-opencode"
+  ]
+}
+EOF
+echo "✅ OMCO installed! Restart OpenCode to activate."
 ```
 
 ## Update
 
 ```bash
-cd ~/.opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
+cd ~/.config/opencode && npm update oh-my-claudecode-opencode && npm list oh-my-claudecode-opencode --depth=0
 ```
 
 Then restart OpenCode.
@@ -72,6 +90,7 @@ Then restart OpenCode.
 
 - If OMCO doesn't appear in Tab menu: Ensure you restarted OpenCode
 - If npm install fails: Check Node.js version (requires 18+)
+- Verify plugin is registered: `cat ~/.config/opencode/opencode.json`
 - For diagnostics: `/doctor` command
 
 ---
