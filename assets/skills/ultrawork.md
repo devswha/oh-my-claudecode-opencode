@@ -54,19 +54,19 @@ This skill enhances Claude's capabilities by:
 
 ```
 // Simple question → LOW tier (saves tokens!)
-Task(subagent_type="oh-my-claudecode:architect-low", model="haiku", prompt="What does this function return?")
+call_omco_agent(subagent_type="oh-my-claudecode:architect-low", model="haiku", run_in_background=true, prompt="What does this function return?")
 
 // Standard implementation → MEDIUM tier
-Task(subagent_type="oh-my-claudecode:executor", model="sonnet", prompt="Add error handling to login")
+call_omco_agent(subagent_type="oh-my-claudecode:executor", model="sonnet", run_in_background=true, prompt="Add error handling to login")
 
 // Complex refactoring → HIGH tier
-Task(subagent_type="oh-my-claudecode:executor-high", model="opus", prompt="Refactor auth module using JWT across 5 files")
+call_omco_agent(subagent_type="oh-my-claudecode:executor-high", model="opus", run_in_background=true, prompt="Refactor auth module using JWT across 5 files")
 
 // Quick file lookup → LOW tier
-Task(subagent_type="oh-my-claudecode:explore", model="haiku", prompt="Find where UserService is defined")
+call_omco_agent(subagent_type="oh-my-claudecode:explore", model="haiku", run_in_background=true, prompt="Find where UserService is defined")
 
 // Thorough search → MEDIUM tier
-Task(subagent_type="oh-my-claudecode:explore-medium", model="sonnet", prompt="Find all authentication patterns in the codebase")
+call_omco_agent(subagent_type="oh-my-claudecode:explore-medium", model="sonnet", run_in_background=true, prompt="Find all authentication patterns in the codebase")
 ```
 
 ## Background Execution Rules

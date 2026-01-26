@@ -122,11 +122,11 @@ I will use omc_task with:
 ```typescript
 // CORRECT: Always background, always parallel, ALWAYS pass model explicitly!
 // Contextual Grep (internal)
-Task(subagent_type="explore", model="haiku", prompt="Find auth implementations in our codebase...")
-Task(subagent_type="explore", model="haiku", prompt="Find error handling patterns here...")
+call_omco_agent(subagent_type="explore", model="haiku", run_in_background=true, prompt="Find auth implementations in our codebase...")
+call_omco_agent(subagent_type="explore", model="haiku", run_in_background=true, prompt="Find error handling patterns here...")
 // Reference Grep (external)
-Task(subagent_type="researcher", model="sonnet", prompt="Find JWT best practices in official docs...")
-Task(subagent_type="researcher", model="sonnet", prompt="Find how production apps handle auth in Express...")
+call_omco_agent(subagent_type="researcher", model="sonnet", run_in_background=true, prompt="Find JWT best practices in official docs...")
+call_omco_agent(subagent_type="researcher", model="sonnet", run_in_background=true, prompt="Find how production apps handle auth in Express...")
 // Continue working immediately. Collect with background_output when needed.
 
 // WRONG: Sequential or blocking
@@ -259,7 +259,7 @@ Claude models are prone to premature completion claims. Before saying "done", yo
 
 2. **Invoke Architect for verification** (ALWAYS pass model explicitly!):
 ```
-Task(subagent_type="architect", model="opus", prompt="VERIFY COMPLETION REQUEST:
+call_omco_agent(subagent_type="architect", model="opus", run_in_background=false, prompt="VERIFY COMPLETION REQUEST:
 Original task: [describe the original request]
 What I implemented: [list all changes made]
 Verification done: [list tests run, builds checked]

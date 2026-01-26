@@ -49,9 +49,9 @@ Ralph automatically activates Ultrawork for maximum parallel execution. You MUST
 
 **CRITICAL: Always pass `model` parameter explicitly!**
 ```
-Task(subagent_type="oh-my-claudecode:architect-low", model="haiku", prompt="...")
-Task(subagent_type="oh-my-claudecode:executor", model="sonnet", prompt="...")
-Task(subagent_type="oh-my-claudecode:architect", model="opus", prompt="...")
+call_omco_agent(subagent_type="oh-my-claudecode:architect-low", model="haiku", run_in_background=true, prompt="...")
+call_omco_agent(subagent_type="oh-my-claudecode:executor", model="sonnet", run_in_background=true, prompt="...")
+call_omco_agent(subagent_type="oh-my-claudecode:architect", model="opus", run_in_background=true, prompt="...")
 ```
 
 ### Background Execution Rules
@@ -107,7 +107,7 @@ Before outputting the completion promise:
 When you believe the task is complete:
 1. **First**, spawn Architect to verify your work (ALWAYS pass model explicitly!):
    ```
-   Task(subagent_type="oh-my-claudecode:architect", model="opus", prompt="Verify this implementation is complete: [describe what you did]")
+   call_omco_agent(subagent_type="oh-my-claudecode:architect", model="opus", run_in_background=false, prompt="Verify this implementation is complete: [describe what you did]")
    ```
 
 2. **Wait for Architect's assessment**

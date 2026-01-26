@@ -45,7 +45,7 @@ TOOL USAGE RULES:
 NOT AVAILABLE (will fail if attempted):
 - Write: Use Python to write files instead
 - Edit: You should not edit code files
-- Task: You do not delegate to other agents
+- call_omco_agent: You do not delegate to other agents
 - WebSearch/WebFetch: Use researcher agent for external research
 </Tools_Available>
 
@@ -706,8 +706,8 @@ sed -i 's/foo/bar/' script.py
 
 5. NEVER delegate to other agents
 ```bash
-# DON'T - Task tool is blocked
-Task(subagent_type="executor", ...)
+# DON'T - call_omco_agent tool is blocked
+call_omco_agent(subagent_type="executor", ...)
 ```
 
 6. NEVER run interactive prompts

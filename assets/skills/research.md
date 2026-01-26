@@ -60,17 +60,17 @@ When given a research goal, decompose into 3-7 independent stages:
 
 ### Parallel Scientist Invocation
 
-Fire independent stages in parallel via Task tool:
+Fire independent stages in parallel via call_omco_agent tool:
 
 ```
 // Stage 1 - Simple data gathering
-Task(subagent_type="oh-my-claudecode:scientist-low", model="haiku", prompt="[RESEARCH_STAGE:1] Investigate...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-low", model="haiku", run_in_background=true, prompt="[RESEARCH_STAGE:1] Investigate...")
 
 // Stage 2 - Standard analysis
-Task(subagent_type="oh-my-claudecode:scientist", model="sonnet", prompt="[RESEARCH_STAGE:2] Analyze...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist", model="sonnet", run_in_background=true, prompt="[RESEARCH_STAGE:2] Analyze...")
 
 // Stage 3 - Complex reasoning
-Task(subagent_type="oh-my-claudecode:scientist-high", model="opus", prompt="[RESEARCH_STAGE:3] Deep analysis of...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-high", model="opus", run_in_background=true, prompt="[RESEARCH_STAGE:3] Deep analysis of...")
 ```
 
 ### Smart Model Routing
@@ -100,7 +100,7 @@ After parallel execution completes, verify findings:
 
 ```
 // Cross-validation stage
-Task(subagent_type="oh-my-claudecode:scientist", model="sonnet", prompt="
+call_omco_agent(subagent_type="oh-my-claudecode:scientist", model="sonnet", run_in_background=false, prompt="
 [RESEARCH_VERIFICATION]
 Cross-validate these findings for consistency:
 
@@ -181,9 +181,9 @@ When stages analyze different data sources:
 
 ```
 // All fire simultaneously
-Task(subagent_type="oh-my-claudecode:scientist-low", model="haiku", prompt="[STAGE:1] Analyze src/api/...")
-Task(subagent_type="oh-my-claudecode:scientist-low", model="haiku", prompt="[STAGE:2] Analyze src/utils/...")
-Task(subagent_type="oh-my-claudecode:scientist-low", model="haiku", prompt="[STAGE:3] Analyze src/components/...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-low", model="haiku", run_in_background=true, prompt="[STAGE:1] Analyze src/api/...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-low", model="haiku", run_in_background=true, prompt="[STAGE:2] Analyze src/utils/...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-low", model="haiku", run_in_background=true, prompt="[STAGE:3] Analyze src/components/...")
 ```
 
 ### Hypothesis Battery (Parallel)
@@ -192,9 +192,9 @@ When testing multiple hypotheses:
 
 ```
 // Test hypotheses simultaneously
-Task(subagent_type="oh-my-claudecode:scientist", model="sonnet", prompt="[HYPOTHESIS:A] Test if caching improves...")
-Task(subagent_type="oh-my-claudecode:scientist", model="sonnet", prompt="[HYPOTHESIS:B] Test if batching reduces...")
-Task(subagent_type="oh-my-claudecode:scientist", model="sonnet", prompt="[HYPOTHESIS:C] Test if lazy loading helps...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist", model="sonnet", run_in_background=true, prompt="[HYPOTHESIS:A] Test if caching improves...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist", model="sonnet", run_in_background=true, prompt="[HYPOTHESIS:B] Test if batching reduces...")
+call_omco_agent(subagent_type="oh-my-claudecode:scientist", model="sonnet", run_in_background=true, prompt="[HYPOTHESIS:C] Test if lazy loading helps...")
 ```
 
 ### Cross-Validation (Sequential)
@@ -206,7 +206,7 @@ When verification depends on all findings:
 [stages complete]
 
 // Then sequential verification
-Task(subagent_type="oh-my-claudecode:scientist-high", model="opus", prompt="
+call_omco_agent(subagent_type="oh-my-claudecode:scientist-high", model="opus", run_in_background=false, prompt="
 [CROSS_VALIDATION]
 Validate consistency across all findings:
 - Finding 1: ...
