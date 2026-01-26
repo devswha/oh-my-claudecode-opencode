@@ -21758,16 +21758,38 @@ ${prompt}` : prompt;
         };
         if (resolvedModel) {
           promptBody.model = resolvedModel;
-          log(`Using parent model for subagent`, { taskId, ...resolvedModel });
+          log(`Using model for subagent`, { taskId, ...resolvedModel });
         }
-        const promptResp = await ctx.client.session.prompt({
+        let promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
           body: promptBody,
           query: { directory: ctx.directory }
         });
-        const promptData = promptResp.data;
+        let promptData = promptResp.data;
         if (promptResp.error) {
           throw new Error(`Prompt failed: ${JSON.stringify(promptResp.error)}`);
+        }
+        if (promptData?.info?.error) {
+          const err = promptData.info.error;
+          const isModelError = err.name === "ProviderModelNotFoundError" || err.name === "ProviderNotFoundError" || err.name?.includes("Model") || err.name?.includes("Provider");
+          if (isModelError && parentModel && resolvedModel !== parentModel) {
+            log(`[background-manager] Model error with tier-mapped model, retrying with parent session model`, {
+              taskId,
+              error: err.name,
+              failedModel: resolvedModel,
+              fallbackModel: parentModel
+            });
+            promptBody.model = parentModel;
+            promptResp = await ctx.client.session.prompt({
+              path: { id: sessionID },
+              body: promptBody,
+              query: { directory: ctx.directory }
+            });
+            promptData = promptResp.data;
+            if (promptResp.error) {
+              throw new Error(`Prompt failed after retry: ${JSON.stringify(promptResp.error)}`);
+            }
+          }
         }
         if (promptData?.info?.error) {
           const err = promptData.info.error;
@@ -34334,7 +34356,7 @@ ${prompt}`;
           promptBody.model = resolvedModel;
           log(`Using resolved model for sync agent call`, { subagent_type, ...resolvedModel });
         }
-        const promptResp = await ctx.client.session.prompt({
+        let promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
           body: promptBody,
           query: { directory: ctx.directory }
@@ -34346,7 +34368,32 @@ ${prompt}`;
             error: `Prompt failed: ${JSON.stringify(promptResp.error)}`
           });
         }
-        const promptData = promptResp.data;
+        let promptData = promptResp.data;
+        if (promptData?.info?.error) {
+          const err = promptData.info.error;
+          const isModelError = err.name === "ProviderModelNotFoundError" || err.name === "ProviderNotFoundError" || err.name?.includes("Model") || err.name?.includes("Provider");
+          if (isModelError && parentModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Model error with tier-mapped model, retrying with parent session model`, {
+              error: err.name,
+              failedModel: resolvedModel,
+              fallbackModel: parentModel
+            });
+            promptBody.model = parentModel;
+            promptResp = await ctx.client.session.prompt({
+              path: { id: sessionID },
+              body: promptBody,
+              query: { directory: ctx.directory }
+            });
+            if (promptResp.error) {
+              return JSON.stringify({
+                session_id: sessionID,
+                status: "failed",
+                error: `Prompt failed after retry: ${JSON.stringify(promptResp.error)}`
+              });
+            }
+            promptData = promptResp.data;
+          }
+        }
         if (promptData?.info?.error) {
           const err = promptData.info.error;
           const errMsg = err.data?.message || err.name || "Unknown error";

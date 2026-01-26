@@ -183,16 +183,16 @@ export function createBackgroundManager(
         // Include model if available - this ensures subagent uses same provider as parent
         if (resolvedModel) {
           promptBody.model = resolvedModel;
-          log(`Using parent model for subagent`, { taskId, ...resolvedModel });
+          log(`Using model for subagent`, { taskId, ...resolvedModel });
         }
 
-        const promptResp = await ctx.client.session.prompt({
+        let promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
           body: promptBody,
           query: { directory: ctx.directory },
         });
 
-        const promptData = promptResp.data as {
+        let promptData = promptResp.data as {
           info?: {
             role?: string;
             error?: { name: string; data?: { providerID?: string; message?: string } };
@@ -205,7 +205,41 @@ export function createBackgroundManager(
           throw new Error(`Prompt failed: ${JSON.stringify(promptResp.error)}`);
         }
 
-        // Check for provider auth errors (401)
+        // Check for provider/model errors - retry with fallback if tier-mapped model failed
+        if (promptData?.info?.error) {
+          const err = promptData.info.error;
+          const isModelError = err.name === "ProviderModelNotFoundError" || 
+                               err.name === "ProviderNotFoundError" ||
+                               err.name?.includes("Model") ||
+                               err.name?.includes("Provider");
+          
+          // If model error and we have a different fallback model, retry
+          if (isModelError && parentModel && resolvedModel !== parentModel) {
+            log(`[background-manager] Model error with tier-mapped model, retrying with parent session model`, {
+              taskId,
+              error: err.name,
+              failedModel: resolvedModel,
+              fallbackModel: parentModel,
+            });
+            
+            // Retry with parent session model
+            promptBody.model = parentModel;
+            promptResp = await ctx.client.session.prompt({
+              path: { id: sessionID },
+              body: promptBody,
+              query: { directory: ctx.directory },
+            });
+            
+            promptData = promptResp.data as typeof promptData;
+            
+            // Check again for errors after retry
+            if (promptResp.error) {
+              throw new Error(`Prompt failed after retry: ${JSON.stringify(promptResp.error)}`);
+            }
+          }
+        }
+        
+        // Check for provider auth errors (401) or other errors after potential retry
         if (promptData?.info?.error) {
           const err = promptData.info.error;
           const errMsg = err.data?.message || err.name || "Unknown error";

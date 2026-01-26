@@ -4,6 +4,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { execSync } from "node:child_process";
 var OPENCODE_CONFIG_DIR = path.join(os.homedir(), ".config", "opencode");
 var PLUGIN_NAME = "oh-my-claudecode-opencode";
 function checkPluginInstalled() {
@@ -163,13 +164,107 @@ function checkOmcoConfig() {
     details: "Optional: create .opencode/omco.json for custom config"
   };
 }
+function checkVersionUpdate() {
+  const pluginPkgPath = path.join(OPENCODE_CONFIG_DIR, "node_modules", PLUGIN_NAME, "package.json");
+  try {
+    if (!fs.existsSync(pluginPkgPath)) {
+      return {
+        status: "FAIL",
+        message: "Plugin not installed"
+      };
+    }
+    const pkg = JSON.parse(fs.readFileSync(pluginPkgPath, "utf-8"));
+    const installedVersion = pkg.version;
+    try {
+      const npmVersion = execSync(`npm view ${PLUGIN_NAME} version`, {
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"]
+      }).trim();
+      if (installedVersion === npmVersion) {
+        return {
+          status: "OK",
+          message: `Up to date (v${installedVersion})`
+        };
+      } else {
+        return {
+          status: "WARN",
+          message: `Update available: v${installedVersion} → v${npmVersion}`,
+          fix: `Run: cd ~/.config/opencode && npm install ${PLUGIN_NAME}@latest`
+        };
+      }
+    } catch (npmError) {
+      return {
+        status: "OK",
+        message: "Could not check npm registry (offline?)",
+        details: `Installed: v${installedVersion}`
+      };
+    }
+  } catch (e) {
+    return {
+      status: "FAIL",
+      message: `Failed to check version: ${e.message}`
+    };
+  }
+}
+function checkToolCompatibility() {
+  const distPath = path.join(OPENCODE_CONFIG_DIR, "node_modules", PLUGIN_NAME, "dist", "index.js");
+  const skillPath = path.join(OPENCODE_CONFIG_DIR, "node_modules", PLUGIN_NAME, "assets", "skills", "orchestrate.md");
+  try {
+    if (!fs.existsSync(distPath)) {
+      return {
+        status: "FAIL",
+        message: "dist/index.js not found"
+      };
+    }
+    const distContent = fs.readFileSync(distPath, "utf-8");
+    const hasNewTool = distContent.includes("call_omco_agent");
+    const hasOldTool = distContent.includes("call_omo_agent");
+    let hasDeprecatedSkillAPI = false;
+    if (fs.existsSync(skillPath)) {
+      const skillContent = fs.readFileSync(skillPath, "utf-8");
+      hasDeprecatedSkillAPI = skillContent.includes("Task(subagent_type");
+    }
+    if (hasOldTool) {
+      return {
+        status: "WARN",
+        message: "Using deprecated tool name (call_omo_agent)",
+        fix: `Update to v0.6.0+: cd ~/.config/opencode && npm install ${PLUGIN_NAME}@latest`
+      };
+    }
+    if (hasDeprecatedSkillAPI) {
+      return {
+        status: "WARN",
+        message: "Skills still reference Claude Code Task() API",
+        fix: `Update to v0.6.0+: cd ~/.config/opencode && npm install ${PLUGIN_NAME}@latest`
+      };
+    }
+    if (hasNewTool) {
+      return {
+        status: "OK",
+        message: "Tool API is up to date (call_omco_agent)"
+      };
+    }
+    return {
+      status: "WARN",
+      message: "Tool API compatibility unclear",
+      fix: `Reinstall: cd ~/.config/opencode && npm install ${PLUGIN_NAME}@latest`
+    };
+  } catch (e) {
+    return {
+      status: "FAIL",
+      message: `Failed to check tool compatibility: ${e.message}`
+    };
+  }
+}
 function runDiagnostics() {
   const checks = {
     pluginInstalled: checkPluginInstalled(),
     pluginInConfig: checkPluginInConfig(),
     assetsPresent: checkAssetsPresent(),
     packageDependency: checkPackageDependency(),
-    omcoConfigValid: checkOmcoConfig()
+    omcoConfigValid: checkOmcoConfig(),
+    versionUpdate: checkVersionUpdate(),
+    toolCompatibility: checkToolCompatibility()
   };
   const values = Object.values(checks);
   const summary = {

@@ -104,7 +104,7 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
           log(`Using resolved model for sync agent call`, { subagent_type, ...resolvedModel });
         }
 
-        const promptResp = await ctx.client.session.prompt({
+        let promptResp = await ctx.client.session.prompt({
           path: { id: sessionID },
           body: promptBody,
           query: { directory: ctx.directory },
@@ -119,7 +119,7 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
           });
         }
 
-        const promptData = promptResp.data as {
+        let promptData = promptResp.data as {
           info?: {
             role?: string;
             error?: { name: string; data?: { providerID?: string; message?: string } };
@@ -127,7 +127,44 @@ Prompts MUST be in English. Use \`background_output\` for async results.`,
           parts?: Array<{ type: string; text?: string }>;
         } | undefined;
 
-        // Check for provider auth errors (401)
+        // Check for provider/model errors - retry with fallback if tier-mapped model failed
+        if (promptData?.info?.error) {
+          const err = promptData.info.error;
+          const isModelError = err.name === "ProviderModelNotFoundError" || 
+                               err.name === "ProviderNotFoundError" ||
+                               err.name?.includes("Model") ||
+                               err.name?.includes("Provider");
+          
+          // If model error and we have a different fallback model, retry
+          if (isModelError && parentModel && resolvedModel !== parentModel) {
+            log(`[call-omco-agent] Model error with tier-mapped model, retrying with parent session model`, {
+              error: err.name,
+              failedModel: resolvedModel,
+              fallbackModel: parentModel,
+            });
+            
+            // Retry with parent session model
+            promptBody.model = parentModel;
+            promptResp = await ctx.client.session.prompt({
+              path: { id: sessionID },
+              body: promptBody,
+              query: { directory: ctx.directory },
+            });
+            
+            // Check again for HTTP errors
+            if (promptResp.error) {
+              return JSON.stringify({
+                session_id: sessionID,
+                status: "failed",
+                error: `Prompt failed after retry: ${JSON.stringify(promptResp.error)}`,
+              });
+            }
+            
+            promptData = promptResp.data as typeof promptData;
+          }
+        }
+
+        // Check for provider auth errors (401) or other errors after potential retry
         if (promptData?.info?.error) {
           const err = promptData.info.error;
           const errMsg = err.data?.message || err.name || "Unknown error";
