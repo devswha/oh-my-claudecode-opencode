@@ -110,7 +110,7 @@ async function main() {
   }
 
   // 3. Fallback
-  console.log("[OMC] run /omc-setup to install properly");
+  console.log("[OMC] run /omco-setup to install properly");
 }
 
 main();

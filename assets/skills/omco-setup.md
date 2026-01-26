@@ -1,5 +1,5 @@
 ---
-name: omc-setup
+name: omco-setup
 description: Setup and configure oh-my-claudecode-opencode (the ONLY command you need to learn)
 user-invocable: true
 ---
