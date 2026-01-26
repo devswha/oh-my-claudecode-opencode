@@ -1,0 +1,4 @@
+---
+---
+
+Content without metadata.
