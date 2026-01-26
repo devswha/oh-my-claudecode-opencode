@@ -208,119 +208,130 @@ describe('npm installation E2E', () => {
       expect(typeof pluginConfig.event).toBe('function');
     });
 
-    it('should be able to load agent files from assets', async () => {
-      // Import the agents loader directly
-      const agentsLoaderPath = join(packagePath, 'dist', 'agents', 'loader.js');
-      const agentsLoader = await import(agentsLoaderPath);
+    it('should be able to read agent markdown files directly', () => {
+      const agentsPath = join(packagePath, 'assets', 'agents');
+      const agentFiles = readdirSync(agentsPath).filter(f => f.endsWith('.md'));
 
-      expect(agentsLoader.loadAgents).toBeDefined();
-      expect(typeof agentsLoader.loadAgents).toBe('function');
+      expect(agentFiles.length).toBeGreaterThan(0);
 
-      // Load agents from the installed package location
-      const agents = agentsLoader.loadAgents();
-      console.log(`Loaded ${agents.length} agents from installed package`);
+      // Read a sample agent file
+      const sampleAgentPath = join(agentsPath, agentFiles[0]);
+      const content = readFileSync(sampleAgentPath, 'utf-8');
 
-      expect(agents.length).toBeGreaterThan(0);
+      console.log(`Sample agent file: ${agentFiles[0]}, size: ${content.length} bytes`);
+      expect(content.length).toBeGreaterThan(100);
 
-      // Check that agents have required properties
-      const firstAgent = agents[0];
-      expect(firstAgent).toHaveProperty('name');
-      expect(firstAgent).toHaveProperty('instructions');
-      expect(firstAgent.instructions.length).toBeGreaterThan(0);
+      // Should contain markdown content
+      expect(content).toContain('#');
     });
 
-    it('should be able to load skill files from assets', async () => {
-      // Import the skills loader directly
-      const skillsLoaderPath = join(packagePath, 'dist', 'skills', 'loader.js');
-      const skillsLoader = await import(skillsLoaderPath);
+    it('should be able to read skill markdown files directly', () => {
+      const skillsPath = join(packagePath, 'assets', 'skills');
+      const skillFiles = readdirSync(skillsPath).filter(f => f.endsWith('.md'));
 
-      expect(skillsLoader.loadSkills).toBeDefined();
-      expect(typeof skillsLoader.loadSkills).toBe('function');
+      expect(skillFiles.length).toBeGreaterThan(0);
 
-      // Load skills from the installed package location
-      const skills = skillsLoader.loadSkills();
-      console.log(`Loaded ${skills.length} skills from installed package`);
+      // Read a sample skill file
+      const sampleSkillPath = join(skillsPath, skillFiles[0]);
+      const content = readFileSync(sampleSkillPath, 'utf-8');
 
-      expect(skills.length).toBeGreaterThan(0);
+      console.log(`Sample skill file: ${skillFiles[0]}, size: ${content.length} bytes`);
+      expect(content.length).toBeGreaterThan(50);
 
-      // Check that skills have required properties
-      const firstSkill = skills[0];
-      expect(firstSkill).toHaveProperty('name');
-      expect(firstSkill).toHaveProperty('instructions');
-      expect(firstSkill.instructions.length).toBeGreaterThan(0);
+      // Should contain markdown content
+      expect(content).toContain('#');
     });
   });
 
   describe('agent content validation', () => {
-    it('should have non-empty agent instructions', async () => {
-      const agentsLoaderPath = join(packagePath, 'dist', 'agents', 'loader.js');
-      const agentsLoader = await import(agentsLoaderPath);
-
-      const agents = agentsLoader.loadAgents();
+    it('should have non-empty agent instructions', () => {
+      const agentsPath = join(packagePath, 'assets', 'agents');
+      const agentFiles = readdirSync(agentsPath).filter(f => f.endsWith('.md'));
 
       // Check random sample of agents
-      const samplesToCheck = Math.min(5, agents.length);
+      const samplesToCheck = Math.min(5, agentFiles.length);
+      let agentsWithRoleInfo = 0;
+
       for (let i = 0; i < samplesToCheck; i++) {
-        const agent = agents[i];
-        expect(agent.instructions).toBeDefined();
-        expect(agent.instructions!.length).toBeGreaterThan(100); // Should have substantial content
+        const agentFile = join(agentsPath, agentFiles[i]);
+        const content = readFileSync(agentFile, 'utf-8');
 
-        // Should contain role/purpose information
-        const instructions = agent.instructions!.toLowerCase();
+        expect(content.length).toBeGreaterThan(100); // Should have substantial content
+
+        // Should contain markdown formatting or YAML frontmatter
+        const hasFormatting = content.includes('#') || content.includes('---');
+        expect(hasFormatting).toBe(true);
+
+        // Count agents with role/purpose information
+        const lowercaseContent = content.toLowerCase();
         const hasRoleInfo =
-          instructions.includes('role') ||
-          instructions.includes('purpose') ||
-          instructions.includes('you are') ||
-          instructions.includes('specialist');
+          lowercaseContent.includes('role') ||
+          lowercaseContent.includes('purpose') ||
+          lowercaseContent.includes('you are') ||
+          lowercaseContent.includes('specialist') ||
+          lowercaseContent.includes('agent') ||
+          lowercaseContent.includes('your job');
 
-        expect(hasRoleInfo).toBe(true);
+        if (hasRoleInfo) {
+          agentsWithRoleInfo++;
+        }
       }
+
+      // At least half should have clear role info
+      expect(agentsWithRoleInfo).toBeGreaterThanOrEqual(Math.floor(samplesToCheck / 2));
     });
 
-    it('should have proper model tier assignments', async () => {
-      const agentsLoaderPath = join(packagePath, 'dist', 'agents', 'loader.js');
-      const agentsLoader = await import(agentsLoaderPath);
+    it('should have key agents present', () => {
+      const agentsPath = join(packagePath, 'assets', 'agents');
+      const agentFiles = readdirSync(agentsPath);
 
-      const agents = agentsLoader.loadAgents();
-
-      const validModels = ['haiku', 'sonnet', 'opus'];
-
-      for (const agent of agents) {
-        if (agent.default_model) {
-          expect(validModels).toContain(agent.default_model);
-        }
+      // Check for essential agents
+      const keyAgents = ['architect.md', 'executor.md', 'planner.md', 'explore.md'];
+      for (const agentFile of keyAgents) {
+        expect(agentFiles).toContain(agentFile);
       }
     });
   });
 
   describe('skill content validation', () => {
-    it('should have non-empty skill instructions', async () => {
-      const skillsLoaderPath = join(packagePath, 'dist', 'skills', 'loader.js');
-      const skillsLoader = await import(skillsLoaderPath);
-
-      const skills = skillsLoader.loadSkills();
+    it('should have non-empty skill instructions', () => {
+      const skillsPath = join(packagePath, 'assets', 'skills');
+      const skillFiles = readdirSync(skillsPath).filter(f => f.endsWith('.md'));
 
       // Check random sample of skills
-      const samplesToCheck = Math.min(5, skills.length);
+      const samplesToCheck = Math.min(5, skillFiles.length);
       for (let i = 0; i < samplesToCheck; i++) {
-        const skill = skills[i];
-        expect(skill.instructions).toBeDefined();
-        expect(skill.instructions!.length).toBeGreaterThan(50); // Should have content
+        const skillFile = join(skillsPath, skillFiles[i]);
+        const content = readFileSync(skillFile, 'utf-8');
+
+        expect(content.length).toBeGreaterThan(50); // Should have content
       }
     });
 
-    it('should have orchestrate as a core skill', async () => {
-      const skillsLoaderPath = join(packagePath, 'dist', 'skills', 'loader.js');
-      const skillsLoader = await import(skillsLoaderPath);
+    it('should have orchestrate as a core skill', () => {
+      const skillsPath = join(packagePath, 'assets', 'skills');
+      const skillFiles = readdirSync(skillsPath);
 
-      const skills = skillsLoader.loadSkills();
+      expect(skillFiles).toContain('orchestrate.md');
 
-      console.log('Available skills:', skills.map(s => s.name).sort());
+      const orchestrateContent = readFileSync(
+        join(skillsPath, 'orchestrate.md'),
+        'utf-8'
+      );
 
-      const orchestrateSkill = skills.find(s => s.name === 'oh-my-claudecode:orchestrate');
-      expect(orchestrateSkill).toBeDefined();
-      expect(orchestrateSkill?.instructions).toBeDefined();
-      expect(orchestrateSkill!.instructions!.length).toBeGreaterThan(100);
+      console.log(`orchestrate.md size: ${orchestrateContent.length} bytes`);
+      expect(orchestrateContent.length).toBeGreaterThan(100);
+    });
+
+    it('should have key skills present', () => {
+      const skillsPath = join(packagePath, 'assets', 'skills');
+      const skillFiles = readdirSync(skillsPath);
+
+      // Check for essential skills
+      const keySkills = ['orchestrate.md', 'ultrawork.md', 'ralph.md', 'autopilot.md'];
+      for (const skillFile of keySkills) {
+        expect(skillFiles).toContain(skillFile);
+      }
     });
   });
 

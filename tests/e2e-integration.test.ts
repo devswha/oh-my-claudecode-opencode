@@ -105,8 +105,8 @@ describe("E2E Integration: Plugin Initialization", () => {
     expect(plugin.tool.background_output).toBeDefined();
     expect(plugin.tool.background_cancel).toBeDefined();
 
-    // Verify call_omo_agent tool
-    expect(plugin.tool.call_omo_agent).toBeDefined();
+    // Verify call_omco_agent tool
+    expect(plugin.tool.call_omco_agent).toBeDefined();
   });
 
   it("should register createConfigHandler", async () => {

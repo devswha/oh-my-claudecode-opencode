@@ -192,14 +192,14 @@ background_cancel(all=true)
 
 ```typescript
 // Synchronous call
-call_omo_agent(
+call_omco_agent(
   subagent_type="oracle",
   prompt="Review this architecture decision...",
   run_in_background=false
 )
 
 // Async call
-call_omo_agent(
+call_omco_agent(
   subagent_type="explore",
   prompt="Find all React components",
   run_in_background=true

@@ -2,7 +2,7 @@ import type { Plugin, PluginInput } from "@opencode-ai/plugin";
 import { loadConfig } from "./config";
 import { createBackgroundManager } from "./tools/background-manager";
 import { createBackgroundTools } from "./tools/background-tools";
-import { createCallOmoAgent } from "./tools/call-omo-agent";
+import { createCallOmcoAgent } from "./tools/call-omco-agent";
 import { createConfigHandler } from "./plugin-handlers/config-handler";
 import { createRalphLoopHook } from "./hooks/ralph-loop";
 import { createPersistentModeHook, checkPersistentModes } from "./hooks/persistent-mode";
@@ -23,7 +23,7 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
 
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
-  const callOmoAgent = createCallOmoAgent(ctx, backgroundManager);
+  const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager);
 
   // Create system prompt injector for mode tracking
   const systemPromptInjector = createSystemPromptInjector(ctx);
@@ -215,7 +215,7 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
     },
     tool: {
       ...backgroundTools,
-      call_omo_agent: callOmoAgent,
+      call_omco_agent: callOmcoAgent,
     },
   };
 };

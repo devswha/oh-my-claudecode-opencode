@@ -30,7 +30,7 @@ export interface RememberTagProcessorOptions {
 // Constants
 // ============================================================================
 
-const DEFAULT_TOOLS = ["Task", "task", "call_omo_agent"];
+const DEFAULT_TOOLS = ["Task", "task", "call_omco_agent"];
 
 // ============================================================================
 // Hook Factory

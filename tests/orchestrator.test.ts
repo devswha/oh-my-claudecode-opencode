@@ -2,13 +2,13 @@
  * Orchestrator Tests
  *
  * Tests for the orchestrator and agent call system integration.
- * Covers agent registry, config handler, and call-omo-agent tool.
+ * Covers agent registry, config handler, and call-omco-agent tool.
  */
 
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import type { PluginInput } from "@opencode-ai/plugin";
 import { createConfigHandler } from "../src/plugin-handlers/config-handler";
-import { createCallOmoAgent } from "../src/tools/call-omo-agent";
+import { createCallOmcoAgent } from "../src/tools/call-omco-agent";
 import type { BackgroundManager } from "../src/tools/background-manager";
 import type { OmoOmcsConfig } from "../src/config";
 import {
@@ -400,7 +400,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should validate agent existence", async () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       const result = await tool.execute(
         {
@@ -419,7 +419,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should enhance prompt with agent system prompt", async () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       await tool.execute(
         {
@@ -445,7 +445,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should create background task when run_in_background is true", async () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       const result = await tool.execute(
         {
@@ -465,7 +465,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should execute synchronously when run_in_background is false", async () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       const result = await tool.execute(
         {
@@ -494,7 +494,7 @@ describe("Orchestrator Integration", () => {
         },
       } as unknown as PluginInput;
 
-      const tool = createCallOmoAgent(errorContext, mockManager);
+      const tool = createCallOmcoAgent(errorContext, mockManager);
 
       const result = await tool.execute(
         {
@@ -512,7 +512,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should include agent name and description in tool description", () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       expect(tool.description).toContain("architect");
       expect(tool.description).toContain("executor");
@@ -521,7 +521,7 @@ describe("Orchestrator Integration", () => {
     });
 
     it("should include alias information in tool description", () => {
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       // Should show aliases and their canonical names
       expect(tool.description).toContain("oracle");
@@ -622,7 +622,7 @@ describe("Orchestrator Integration", () => {
       } as PluginInput;
 
       const mockManager = {} as BackgroundManager;
-      const tool = createCallOmoAgent(mockContext, mockManager);
+      const tool = createCallOmcoAgent(mockContext, mockManager);
 
       // Tool validation should catch missing parameters
       // This test validates the tool schema includes required fields

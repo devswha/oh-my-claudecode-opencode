@@ -2,7 +2,7 @@ import { tool, type PluginInput, type ToolDefinition } from "@opencode-ai/plugin
 import type { BackgroundManager } from "./background-manager";
 import { getAgent, listAgentNames, getCanonicalName, isAlias } from "../agents";
 
-export function createCallOmoAgent(ctx: PluginInput, manager: BackgroundManager): ToolDefinition {
+export function createCallOmcoAgent(ctx: PluginInput, manager: BackgroundManager): ToolDefinition {
   // Generate dynamic agent list for description
   const agentNames = listAgentNames();
   const agentList = agentNames.map(name => {

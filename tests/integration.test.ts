@@ -65,7 +65,7 @@ describe("Plugin Integration", () => {
     expect(plugin.tool.background_task).toBeDefined();
     expect(plugin.tool.background_output).toBeDefined();
     expect(plugin.tool.background_cancel).toBeDefined();
-    expect(plugin.tool.call_omo_agent).toBeDefined();
+    expect(plugin.tool.call_omco_agent).toBeDefined();
   });
 
   it("should handle full ultrawork mode flow", async () => {
@@ -384,14 +384,14 @@ describe("Background Tools Integration", () => {
     expect(typeof plugin.tool.background_task.execute).toBe("function");
   });
 
-  it("should register call_omo_agent tool", async () => {
+  it("should register call_omco_agent tool", async () => {
     const OmoOmcsPlugin = (await import("../src/index")).default;
     const mockCtx = createMockCtx();
 
     const plugin = await OmoOmcsPlugin(mockCtx as never);
 
-    expect(plugin.tool.call_omo_agent).toBeDefined();
-    expect(plugin.tool.call_omo_agent.description).toContain("explore");
-    expect(plugin.tool.call_omo_agent.description).toContain("librarian");
+    expect(plugin.tool.call_omco_agent).toBeDefined();
+    expect(plugin.tool.call_omco_agent.description).toContain("explore");
+    expect(plugin.tool.call_omco_agent.description).toContain("librarian");
   });
 });
