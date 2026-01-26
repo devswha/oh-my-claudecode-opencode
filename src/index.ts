@@ -3,6 +3,7 @@ import { loadConfig } from "./config";
 import { createBackgroundManager } from "./tools/background-manager";
 import { createBackgroundTools } from "./tools/background-tools";
 import { createCallOmcoAgent } from "./tools/call-omco-agent";
+import { createTestAgentsTool } from "./tools/test-agents";
 import { createModelResolutionService } from "./tools/model-resolution-service";
 import { createConfigHandler } from "./plugin-handlers/config-handler";
 import { createRalphLoopHook } from "./hooks/ralph-loop";
@@ -36,6 +37,7 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task, modelService);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
   const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService, pluginConfig.categories);
+  const testAgentsTool = createTestAgentsTool(ctx, backgroundManager);
 
   // Create system prompt injector for mode tracking
   const systemPromptInjector = createSystemPromptInjector(ctx);
@@ -234,6 +236,7 @@ const OmoOmcsPlugin: Plugin = async (ctx: PluginInput) => {
     tool: {
       ...backgroundTools,
       call_omco_agent: callOmcoAgent,
+      test_omco_agents: testAgentsTool,
     },
   };
 };

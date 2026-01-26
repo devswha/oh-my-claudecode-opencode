@@ -86,3 +86,48 @@ If the doctor tool doesn't identify the problem, ask users to:
 1. Share the full doctor report (JSON format preferred)
 2. Share their OpenCode version: `opencode --version`
 3. Open an issue: https://github.com/devswha/oh-my-claudecode-opencode/issues
+
+## Agent Testing
+
+OMCO includes an agent testing tool to verify all agents work correctly.
+
+### Quick Test (Definition Validation)
+
+Tests that agent definitions are valid without invoking APIs:
+
+```
+test_omco_agents(quick=true)
+```
+
+Checks:
+- Agent markdown files exist
+- Frontmatter is valid YAML
+- Required fields (name, description, model) present
+
+### Full Test (API Invocation)
+
+Actually invokes each agent to verify they respond:
+
+```
+test_omco_agents()
+```
+
+Or test a specific agent:
+
+```
+test_omco_agents(agent_name="executor")
+```
+
+### Interpreting Results
+
+| Status | Meaning |
+|--------|---------|
+| pass | Agent responded correctly |
+| fail | Agent failed or timed out |
+| skip | Agent was skipped (e.g., no API key) |
+
+### Troubleshooting Failed Agents
+
+1. Check the agent's tier has a configured model in tierDefaults
+2. Verify the provider API key is set
+3. Check rate limits haven't been exceeded

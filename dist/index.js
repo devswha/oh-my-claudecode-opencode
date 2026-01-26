@@ -34960,6 +34960,212 @@ ${prompt}`;
   });
 }
 
+// src/tools/test-agents.ts
+var TEST_PROMPT = `This is an automated test from OMCO Doctor.
+Reply with exactly: "OMCO_AGENT_TEST_OK"
+Do not add any other text.`;
+async function quickValidateAgent(agentName) {
+  const startTime = Date.now();
+  const canonicalName = isAlias(agentName) ? getCanonicalName(agentName) : agentName;
+  const agent = getAgent(canonicalName);
+  if (!agent) {
+    return {
+      agent: agentName,
+      status: "fail",
+      message: `Agent definition not found`,
+      duration_ms: Date.now() - startTime
+    };
+  }
+  const missingFields = [];
+  if (!agent.name)
+    missingFields.push("name");
+  if (!agent.description)
+    missingFields.push("description");
+  if (!agent.systemPrompt)
+    missingFields.push("systemPrompt");
+  if (missingFields.length > 0) {
+    return {
+      agent: agentName,
+      status: "fail",
+      message: `Missing required fields: ${missingFields.join(", ")}`,
+      duration_ms: Date.now() - startTime
+    };
+  }
+  if (agent.model && !["haiku", "sonnet", "opus"].includes(agent.model)) {
+    return {
+      agent: agentName,
+      status: "fail",
+      message: `Invalid model tier: ${agent.model}`,
+      duration_ms: Date.now() - startTime
+    };
+  }
+  return {
+    agent: agentName,
+    status: "pass",
+    message: `Definition valid (${isAlias(agentName) ? `alias for ${canonicalName}` : "primary"})`,
+    duration_ms: Date.now() - startTime
+  };
+}
+async function fullTestAgent(ctx, manager, agentName, parentSessionID) {
+  const startTime = Date.now();
+  if (isAlias(agentName)) {
+    return {
+      agent: agentName,
+      status: "skip",
+      message: `Skipped (alias for ${getCanonicalName(agentName)})`,
+      duration_ms: Date.now() - startTime
+    };
+  }
+  try {
+    const quickResult = await quickValidateAgent(agentName);
+    if (quickResult.status === "fail") {
+      return quickResult;
+    }
+    const sessionResp = await ctx.client.session.create({
+      body: {
+        parentID: parentSessionID,
+        title: `OMCO Test: ${agentName}`
+      },
+      query: { directory: ctx.directory }
+    });
+    const sessionID = sessionResp.data?.id ?? sessionResp.id;
+    if (!sessionID) {
+      return {
+        agent: agentName,
+        status: "fail",
+        message: "Failed to create test session",
+        duration_ms: Date.now() - startTime
+      };
+    }
+    const agent = getAgent(agentName);
+    const fullPrompt = `${agent.systemPrompt}
+
+---
+
+${TEST_PROMPT}`;
+    const parentModel = await manager.getParentSessionModel(parentSessionID);
+    const promptBody = {
+      parts: [{ type: "text", text: fullPrompt }]
+    };
+    if (parentModel) {
+      promptBody.model = parentModel;
+    }
+    const timeoutMs = 30000;
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Test timeout after 30s")), timeoutMs);
+    });
+    const promptPromise = ctx.client.session.prompt({
+      path: { id: sessionID },
+      body: promptBody,
+      query: { directory: ctx.directory }
+    });
+    const promptResp = await Promise.race([promptPromise, timeoutPromise]);
+    if (promptResp.error) {
+      return {
+        agent: agentName,
+        status: "fail",
+        message: `API error: ${JSON.stringify(promptResp.error)}`,
+        duration_ms: Date.now() - startTime
+      };
+    }
+    const promptData = promptResp.data;
+    if (promptData?.info?.error) {
+      const err = promptData.info.error;
+      const errMsg = err.data?.message || err.name || "Unknown error";
+      return {
+        agent: agentName,
+        status: "fail",
+        message: `[${err.name}] ${errMsg}`,
+        duration_ms: Date.now() - startTime
+      };
+    }
+    const result = promptData?.parts?.filter((p) => p.type === "text" && p.text).map((p) => p.text).join(`
+`) || "";
+    const expectedText = "OMCO_AGENT_TEST_OK";
+    if (result.includes(expectedText)) {
+      return {
+        agent: agentName,
+        status: "pass",
+        message: "Agent responded correctly",
+        duration_ms: Date.now() - startTime
+      };
+    } else {
+      return {
+        agent: agentName,
+        status: "fail",
+        message: `Unexpected response: ${result.substring(0, 100)}`,
+        duration_ms: Date.now() - startTime
+      };
+    }
+  } catch (err) {
+    return {
+      agent: agentName,
+      status: "fail",
+      message: String(err),
+      duration_ms: Date.now() - startTime
+    };
+  }
+}
+function createTestAgentsTool(ctx, manager) {
+  return tool({
+    description: `Test OMCO agents to verify they work correctly.
+
+Run health checks on individual agents or all agents.
+
+Modes:
+- quick: Validate agent definitions only (no API calls)
+- full: Invoke agents and verify responses (slower, uses API)
+
+Usage:
+- Test specific agent: test_omco_agents({ agent_name: "executor" })
+- Test all (quick): test_omco_agents({ quick: true })
+- Test all (full): test_omco_agents({ quick: false })`,
+    args: {
+      agent_name: tool.schema.string().optional().describe('Specific agent to test (e.g., "executor"), or omit to test all agents'),
+      quick: tool.schema.boolean().optional().describe("If true, only validate definitions without invoking agents (default: true)")
+    },
+    async execute(args, context) {
+      const { agent_name, quick = true } = args;
+      const agentNames = agent_name ? [agent_name] : listAgentNames();
+      log(`Testing ${agentNames.length} agents`, { quick, agent_name });
+      const results = [];
+      for (const name of agentNames) {
+        let result;
+        if (quick) {
+          result = await quickValidateAgent(name);
+        } else {
+          result = await fullTestAgent(ctx, manager, name, context.sessionID);
+        }
+        results.push(result);
+        if (!quick && agentNames.length > 1) {
+          log(`Tested ${results.length}/${agentNames.length}`, {
+            agent: name,
+            status: result.status
+          });
+        }
+      }
+      const summary = {
+        total: results.length,
+        pass: results.filter((r) => r.status === "pass").length,
+        fail: results.filter((r) => r.status === "fail").length,
+        skip: results.filter((r) => r.status === "skip").length
+      };
+      const output = {
+        mode: quick ? "quick" : "full",
+        summary,
+        results
+      };
+      log(`Agent testing complete`, {
+        total: summary.total,
+        pass: summary.pass,
+        fail: summary.fail,
+        skip: summary.skip
+      });
+      return JSON.stringify(output, null, 2);
+    }
+  });
+}
+
 // src/config/model-resolver.ts
 var HARDCODED_TIER_DEFAULTS = {
   haiku: "haiku",
@@ -39037,6 +39243,7 @@ var OmoOmcsPlugin = async (ctx) => {
   const backgroundManager = createBackgroundManager(ctx, pluginConfig.background_task, modelService);
   const backgroundTools = createBackgroundTools(backgroundManager, ctx.client);
   const callOmcoAgent = createCallOmcoAgent(ctx, backgroundManager, modelService, pluginConfig.categories);
+  const testAgentsTool = createTestAgentsTool(ctx, backgroundManager);
   const systemPromptInjector = createSystemPromptInjector(ctx);
   const skillInjector = createSkillInjector(ctx);
   const ralphLoop = createRalphLoopHook(ctx, {
@@ -39163,7 +39370,8 @@ var OmoOmcsPlugin = async (ctx) => {
     },
     tool: {
       ...backgroundTools,
-      call_omco_agent: callOmcoAgent
+      call_omco_agent: callOmcoAgent,
+      test_omco_agents: testAgentsTool
     }
   };
 };
